@@ -172,7 +172,7 @@ export type TransformDataWithSelect<
         ? {
             [K in Data extends TypeWithID ? 'id' | keyof Select : keyof Select]: K extends 'id'
               ? number | string
-              : any
+              : unknown
           }
         : Data
       : // END Handle types when they aren't generated
