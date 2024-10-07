@@ -256,7 +256,7 @@ export interface PayloadMigration {
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "posts_select".
  */
-export interface PostsSelect<T extends boolean = true> {
+export interface PostsSelect<T> {
   text?: T;
   serverTextField?: T;
   richText?: T;
@@ -286,7 +286,7 @@ export interface PostsSelect<T extends boolean = true> {
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "simple_select".
  */
-export interface SimpleSelect<T extends boolean = true> {
+export interface SimpleSelect<T> {
   text?: T;
   someNumber?: T;
   group?:
@@ -308,7 +308,7 @@ export interface SimpleSelect<T extends boolean = true> {
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media_select".
  */
-export interface MediaSelect<T extends boolean = true> {
+export interface MediaSelect<T> {
   updatedAt?: T;
   createdAt?: T;
   url?: T;
@@ -359,7 +359,7 @@ export interface MediaSelect<T extends boolean = true> {
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users_select".
  */
-export interface UsersSelect<T extends boolean = true> {
+export interface UsersSelect<T> {
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -374,7 +374,7 @@ export interface UsersSelect<T extends boolean = true> {
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents_select".
  */
-export interface PayloadLockedDocumentsSelect<T extends boolean = true> {
+export interface PayloadLockedDocumentsSelect<T> {
   document?: T;
   globalSlug?: T;
   user?: T;
@@ -385,7 +385,7 @@ export interface PayloadLockedDocumentsSelect<T extends boolean = true> {
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-preferences_select".
  */
-export interface PayloadPreferencesSelect<T extends boolean = true> {
+export interface PayloadPreferencesSelect<T> {
   user?: T;
   key?: T;
   value?: T;
@@ -396,7 +396,7 @@ export interface PayloadPreferencesSelect<T extends boolean = true> {
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-migrations_select".
  */
-export interface PayloadMigrationsSelect<T extends boolean = true> {
+export interface PayloadMigrationsSelect<T> {
   name?: T;
   batch?: T;
   updatedAt?: T;
@@ -439,7 +439,7 @@ export interface ObjectWithNumber {
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "menu_select".
  */
-export interface MenuSelect<T extends boolean = true> {
+export interface MenuSelect<T> {
   globalText?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -448,7 +448,7 @@ export interface MenuSelect<T extends boolean = true> {
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "custom-ts_select".
  */
-export interface CustomTsSelect<T extends boolean = true> {
+export interface CustomTsSelect<T> {
   custom?: T;
   withDefinitionsUsage?: T;
   json?: T;
