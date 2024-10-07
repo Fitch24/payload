@@ -78,6 +78,21 @@ describe('Select Fields', () => {
       })
     })
 
+    it('should select id as default from array', async () => {
+      const res = await payload.findByID({
+        collection: 'posts',
+        id: postId,
+        select: {
+          array: {},
+        },
+      })
+
+      expect(res).toStrictEqual({
+        id: postId,
+        array: post.array.map((item) => ({ id: item.id })),
+      })
+    })
+
     it('should select all the fields inside of array', async () => {
       const res = await payload.findByID({
         collection: 'posts',
@@ -110,6 +125,21 @@ describe('Select Fields', () => {
           id: item.id,
           text: item.text,
         })),
+      })
+    })
+
+    it('should select base fields (id, blockType) inside of blocks', async () => {
+      const res = await payload.findByID({
+        collection: 'posts',
+        id: postId,
+        select: {
+          blocks: {},
+        },
+      })
+
+      expect(res).toStrictEqual({
+        id: postId,
+        blocks: res.blocks.map((block) => ({ blockType: block.blockType, id: block.id })),
       })
     })
 
