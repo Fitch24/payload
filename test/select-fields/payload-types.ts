@@ -60,6 +60,10 @@ export interface Post {
   id: string;
   text?: string | null;
   number?: number | null;
+  group?: {
+    text?: string | null;
+    number?: number | null;
+  };
   array?:
     | {
         text?: string | null;
@@ -169,6 +173,12 @@ export interface PayloadMigration {
 export interface PostsSelect<T extends boolean = true> {
   text?: T;
   number?: T;
+  group?:
+    | T
+    | {
+        text?: T;
+        number?: T;
+      };
   array?:
     | T
     | {

@@ -1,6 +1,5 @@
-import type { Payload } from 'payload'
-
 import path from 'path'
+import { deepCopyObject, type Payload } from 'payload'
 import { fileURLToPath } from 'url'
 
 import type { NextRESTClient } from '../helpers/NextRESTClient.js'
@@ -75,6 +74,40 @@ describe('Select Fields', () => {
         id: postId,
         number: post.number,
         text: post.text,
+      })
+    })
+
+    it('should select all the fields inside of group', async () => {
+      const res = await payload.findByID({
+        collection: 'posts',
+        id: postId,
+        select: {
+          group: true,
+        },
+      })
+
+      expect(res).toStrictEqual({
+        id: postId,
+        group: post.group,
+      })
+    })
+
+    it('should select text field inside of group', async () => {
+      const res = await payload.findByID({
+        collection: 'posts',
+        id: postId,
+        select: {
+          group: {
+            text: true,
+          },
+        },
+      })
+
+      expect(res).toStrictEqual({
+        id: postId,
+        group: {
+          text: post.group.text,
+        },
       })
     })
 
@@ -258,6 +291,40 @@ describe('Select Fields', () => {
       expect(res).toStrictEqual(expected)
     })
 
+    it('should exclude group', async () => {
+      const res = await payload.findByID({
+        collection: 'posts',
+        id: postId,
+        select: {
+          group: false,
+        },
+      })
+
+      const expected = { ...post }
+
+      delete expected['group']
+
+      expect(res).toStrictEqual(expected)
+    })
+
+    it('should exclude text field inside of group', async () => {
+      const res = await payload.findByID({
+        collection: 'posts',
+        id: postId,
+        select: {
+          group: {
+            text: false,
+          },
+        },
+      })
+
+      const expected = deepCopyObject(post)
+
+      delete expected.group.text
+
+      expect(res).toStrictEqual(expected)
+    })
+
     it('should exclude array', async () => {
       const res = await payload.findByID({
         collection: 'posts',
@@ -355,6 +422,10 @@ function createPost() {
     data: {
       number: 1,
       text: 'text',
+      group: {
+        number: 1,
+        text: 'text',
+      },
       blocks: [
         {
           blockType: 'cta',
