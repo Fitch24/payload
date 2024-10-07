@@ -33,7 +33,7 @@ describe('Select Fields', () => {
     }
   })
 
-  describe('Local API - Base', () => {
+  describe('Local API - Base (Include mode)', () => {
     it('should select id as default', async () => {
       const res = await payload.findByID({
         collection: 'posts',
@@ -139,7 +139,7 @@ describe('Select Fields', () => {
 
       expect(res).toStrictEqual({
         id: postId,
-        blocks: res.blocks.map((block) => ({ blockType: block.blockType, id: block.id })),
+        blocks: post.blocks.map((block) => ({ blockType: block.blockType, id: block.id })),
       })
     })
 
@@ -154,7 +154,7 @@ describe('Select Fields', () => {
 
       expect(res).toStrictEqual({
         id: postId,
-        blocks: res.blocks,
+        blocks: post.blocks,
       })
     })
 
@@ -171,7 +171,7 @@ describe('Select Fields', () => {
 
       expect(res).toStrictEqual({
         id: postId,
-        blocks: res.blocks.map((block) =>
+        blocks: post.blocks.map((block) =>
           block.blockType === 'cta'
             ? block
             : {
@@ -195,7 +195,7 @@ describe('Select Fields', () => {
 
       expect(res).toStrictEqual({
         id: postId,
-        blocks: res.blocks.map((block) =>
+        blocks: post.blocks.map((block) =>
           block.blockType === 'cta'
             ? { id: block.id, blockType: block.blockType, ctaText: block.ctaText }
             : {
@@ -203,6 +203,147 @@ describe('Select Fields', () => {
                 blockType: block.blockType,
               },
         ),
+      })
+    })
+  })
+
+  describe('Local API - Base (Exclude mode)', () => {
+    it('should exclude text field', async () => {
+      const res = await payload.findByID({
+        collection: 'posts',
+        id: postId,
+        select: {
+          text: false,
+        },
+      })
+
+      const expected = { ...post }
+
+      delete expected['text']
+
+      expect(res).toStrictEqual(expected)
+    })
+
+    it('should exclude number', async () => {
+      const res = await payload.findByID({
+        collection: 'posts',
+        id: postId,
+        select: {
+          number: false,
+        },
+      })
+
+      const expected = { ...post }
+
+      delete expected['number']
+
+      expect(res).toStrictEqual(expected)
+    })
+
+    it('should exclude number and text', async () => {
+      const res = await payload.findByID({
+        collection: 'posts',
+        id: postId,
+        select: {
+          number: false,
+          text: false,
+        },
+      })
+
+      const expected = { ...post }
+
+      delete expected['text']
+      delete expected['number']
+
+      expect(res).toStrictEqual(expected)
+    })
+
+    it('should exclude array', async () => {
+      const res = await payload.findByID({
+        collection: 'posts',
+        id: postId,
+        select: {
+          array: false,
+        },
+      })
+
+      const expected = { ...post }
+
+      delete expected['array']
+
+      expect(res).toStrictEqual(expected)
+    })
+
+    it('should exclude text field inside of array', async () => {
+      const res = await payload.findByID({
+        collection: 'posts',
+        id: postId,
+        select: {
+          array: {
+            text: false,
+          },
+        },
+      })
+
+      expect(res).toStrictEqual({
+        ...post,
+        array: post.array.map((item) => ({ id: item.id })),
+      })
+    })
+
+    it('should exclude blocks', async () => {
+      const res = await payload.findByID({
+        collection: 'posts',
+        id: postId,
+        select: {
+          blocks: false,
+        },
+      })
+
+      const expected = { ...post }
+
+      delete expected['blocks']
+
+      expect(res).toStrictEqual(expected)
+    })
+
+    it('should exclude all the fields inside of specific block while keeping base fields', async () => {
+      const res = await payload.findByID({
+        collection: 'posts',
+        id: postId,
+        select: {
+          blocks: {
+            cta: false,
+          },
+        },
+      })
+
+      expect(res).toStrictEqual({
+        ...post,
+        blocks: post.blocks.map((block) =>
+          block.blockType === 'cta' ? { id: block.id, blockType: block.blockType } : block,
+        ),
+      })
+    })
+
+    it('should exclude a specific field inside of specific block', async () => {
+      const res = await payload.findByID({
+        collection: 'posts',
+        id: postId,
+        select: {
+          blocks: {
+            cta: { ctaText: false },
+          },
+        },
+      })
+
+      expect(res).toStrictEqual({
+        ...post,
+        blocks: post.blocks.map((block) => {
+          delete block['ctaText']
+
+          return block
+        }),
       })
     })
   })
