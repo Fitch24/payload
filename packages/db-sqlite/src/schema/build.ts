@@ -7,7 +7,7 @@ import type {
   SQLiteTableWithColumns,
   UniqueConstraintBuilder,
 } from 'drizzle-orm/sqlite-core'
-import type { Field } from 'payload'
+import type { Field, SanitizedJoins } from 'payload'
 
 import { createTableName } from '@payloadcms/drizzle'
 import { relations, sql } from 'drizzle-orm'
@@ -35,7 +35,15 @@ export type BaseExtraConfig = Record<
   }) => ForeignKeyBuilder | IndexBuilder | UniqueConstraintBuilder
 >
 
-export type RelationMap = Map<string, { localized: boolean; target: string; type: 'many' | 'one' }>
+export type RelationMap = Map<
+  string,
+  {
+    localized: boolean
+    relationName?: string
+    target: string
+    type: 'many' | 'one'
+  }
+>
 
 type Args = {
   adapter: SQLiteAdapter
@@ -50,17 +58,26 @@ type Args = {
   disableNotNull: boolean
   disableUnique: boolean
   fields: Field[]
+  joins?: SanitizedJoins
   locales?: [string, ...string[]]
-  rootRelationsToBuild?: RelationMap
   rootRelationships?: Set<string>
+  rootRelationsToBuild?: RelationMap
   rootTableIDColType?: IDType
   rootTableName?: string
   tableName: string
   timestamps?: boolean
   versions: boolean
+  /**
+   * Tracks whether or not this table is built
+   * from the result of a localized array or block field at some point
+   */
+  withinLocalizedArrayOrBlock?: boolean
 }
 
 type Result = {
+  hasLocalizedManyNumberField: boolean
+  hasLocalizedManyTextField: boolean
+  hasLocalizedRelationshipField: boolean
   hasManyNumberField: 'index' | boolean
   hasManyTextField: 'index' | boolean
   relationsToBuild: RelationMap
@@ -73,14 +90,16 @@ export const buildTable = ({
   disableNotNull,
   disableUnique = false,
   fields,
+  joins,
   locales,
-  rootRelationsToBuild,
   rootRelationships,
+  rootRelationsToBuild,
   rootTableIDColType,
   rootTableName: incomingRootTableName,
   tableName,
   timestamps,
   versions,
+  withinLocalizedArrayOrBlock,
 }: Args): Result => {
   const isRoot = !incomingRootTableName
   const rootTableName = incomingRootTableName || tableName
@@ -117,26 +136,28 @@ export const buildTable = ({
     disableUnique,
     fields,
     indexes,
+    joins,
     locales,
     localesColumns,
     localesIndexes,
     newTableName: tableName,
     parentTableName: tableName,
-    relationsToBuild,
     relationships,
+    relationsToBuild,
     rootRelationsToBuild: rootRelationsToBuild || relationsToBuild,
     rootTableIDColType: rootTableIDColType || idColType,
     rootTableName,
     versions,
+    withinLocalizedArrayOrBlock,
   })
 
   // split the relationsToBuild by localized and non-localized
   const localizedRelations = new Map()
   const nonLocalizedRelations = new Map()
 
-  relationsToBuild.forEach(({ type, localized, target }, key) => {
+  relationsToBuild.forEach(({ type, localized, relationName, target }, key) => {
     const map = localized ? localizedRelations : nonLocalizedRelations
-    map.set(key, { type, target })
+    map.set(key, { type, relationName, target })
   })
 
   if (timestamps) {
@@ -365,8 +386,12 @@ export const buildTable = ({
         const relatedCollectionCustomIDType =
           adapter.payload.collections[relationshipConfig.slug]?.customIDType
 
-        if (relatedCollectionCustomIDType === 'number') colType = 'numeric'
-        if (relatedCollectionCustomIDType === 'text') colType = 'text'
+        if (relatedCollectionCustomIDType === 'number') {
+          colType = 'numeric'
+        }
+        if (relatedCollectionCustomIDType === 'text') {
+          colType = 'text'
+        }
 
         relationshipColumns[`${relationTo}ID`] = getIDColumn({
           name: `${formattedRelationTo}_id`,
@@ -444,7 +469,7 @@ export const buildTable = ({
   adapter.relations[`relations_${tableName}`] = relations(table, ({ many, one }) => {
     const result: Record<string, Relation<string>> = {}
 
-    nonLocalizedRelations.forEach(({ type, target }, key) => {
+    nonLocalizedRelations.forEach(({ type, relationName, target }, key) => {
       if (type === 'one') {
         result[key] = one(adapter.tables[target], {
           fields: [table[key]],
@@ -453,7 +478,7 @@ export const buildTable = ({
         })
       }
       if (type === 'many') {
-        result[key] = many(adapter.tables[target], { relationName: key })
+        result[key] = many(adapter.tables[target], { relationName: relationName || key })
       }
     })
 
@@ -478,5 +503,12 @@ export const buildTable = ({
     return result
   })
 
-  return { hasManyNumberField, hasManyTextField, relationsToBuild }
+  return {
+    hasLocalizedManyNumberField,
+    hasLocalizedManyTextField,
+    hasLocalizedRelationshipField,
+    hasManyNumberField,
+    hasManyTextField,
+    relationsToBuild,
+  }
 }

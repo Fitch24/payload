@@ -15,8 +15,8 @@ import type {
 } from './LexicalTypeaheadMenuPlugin/types.js'
 
 import { useEditorConfigContext } from '../../config/client/EditorConfigProvider.js'
-import { LexicalTypeaheadMenuPlugin } from './LexicalTypeaheadMenuPlugin/index.js'
 import './index.scss'
+import { LexicalTypeaheadMenuPlugin } from './LexicalTypeaheadMenuPlugin/index.js'
 import { useMenuTriggerMatch } from './useMenuTriggerMatch.js'
 
 const baseClass = 'slash-menu-popup'
@@ -101,11 +101,13 @@ export function SlashMenuPlugin({
     let groupWithItems: Array<SlashMenuGroup> = []
 
     for (const dynamicItem of editorConfig.features.slashMenu.dynamicGroups) {
-      const dynamicGroupWithItems = dynamicItem({
-        editor,
-        queryString,
-      })
-      groupWithItems = groupWithItems.concat(dynamicGroupWithItems)
+      if (queryString) {
+        const dynamicGroupWithItems = dynamicItem({
+          editor,
+          queryString,
+        })
+        groupWithItems = groupWithItems.concat(dynamicGroupWithItems)
+      }
     }
 
     return groupWithItems
@@ -119,6 +121,7 @@ export function SlashMenuPlugin({
 
     if (queryString) {
       // Filter current groups first
+      // @ts-expect-error - TODO: fix this
       groupsWithItems = groupsWithItems.map((group) => {
         const filteredItems = group.items.filter((item) => {
           let itemTitle = item.key
@@ -178,7 +181,7 @@ export function SlashMenuPlugin({
   const onSelectItem = useCallback(
     (
       selectedItem: SlashMenuItemType,
-      nodeToRemove: TextNode | null,
+      nodeToRemove: null | TextNode,
       closeMenu: () => void,
       matchingString: string,
     ) => {
@@ -200,14 +203,14 @@ export function SlashMenuPlugin({
       groups={groups as SlashMenuGroupInternal[]}
       menuRenderFn={(
         anchorElementRef,
-        { selectItemAndCleanUp, selectedItemKey, setSelectedItemKey },
+        { selectedItemKey, selectItemAndCleanUp, setSelectedItemKey },
       ) =>
         anchorElementRef.current && groups.length
           ? ReactDOM.createPortal(
               <div className={baseClass}>
                 {groups.map((group) => {
                   let groupTitle = group.key
-                  if (group.label) {
+                  if (group.label && richTextComponentMap) {
                     groupTitle =
                       typeof group.label === 'function'
                         ? group.label({ i18n, richTextComponentMap, schemaPath })

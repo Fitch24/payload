@@ -57,7 +57,9 @@ export const combineLabel = ({
       RenderedComponent: customLabel,
     }
 
-  if (!LabelToRender) return null
+  if (!LabelToRender) {
+    return null
+  }
 
   return (
     <Fragment>
@@ -88,9 +90,9 @@ const reduceFields = ({
   }
 
   return fields?.reduce((fieldsToUse, field) => {
-    // escape for a variety of reasons
+    // escape for a variety of reasons, include ui fields as they have `name`.
     if (
-      fieldAffectsData(field) &&
+      (fieldAffectsData(field) || field.type === 'ui') &&
       (field.admin.disableBulkEdit ||
         field.unique ||
         field.admin.hidden ||
@@ -175,7 +177,7 @@ export const FieldSelect: React.FC<FieldSelectProps> = ({ fields, setSelected })
 
   return (
     <div className={baseClass}>
-      <FieldLabel label={t('fields:selectFieldsToEdit')} />
+      <FieldLabel field={null} label={t('fields:selectFieldsToEdit')} />
       <ReactSelect
         getOptionValue={(option) => {
           if (typeof option.value === 'object' && 'path' in option.value) {

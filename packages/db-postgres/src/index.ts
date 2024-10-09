@@ -47,13 +47,11 @@ import {
   requireDrizzleKit,
 } from '@payloadcms/drizzle/postgres'
 import { pgEnum, pgSchema, pgTable } from 'drizzle-orm/pg-core'
-import { createDatabaseAdapter } from 'payload'
+import { createDatabaseAdapter, defaultBeginTransaction } from 'payload'
 
 import type { Args, PostgresAdapter } from './types.js'
 
 import { connect } from './connect.js'
-
-export { sql } from 'drizzle-orm'
 
 export function postgresAdapter(args: Args): DatabaseAdapterObj<PostgresAdapter> {
   const postgresIDType = args.idType || 'serial'
@@ -79,6 +77,8 @@ export function postgresAdapter(args: Args): DatabaseAdapterObj<PostgresAdapter>
     return createDatabaseAdapter<PostgresAdapter>({
       name: 'postgres',
       createDatabase: args.createDatabase ?? true,
+      afterSchemaInit: args.afterSchemaInit ?? [],
+      beforeSchemaInit: args.beforeSchemaInit ?? [],
       defaultDrizzleSnapshot,
       drizzle: undefined,
       enums: {},
@@ -108,7 +108,8 @@ export function postgresAdapter(args: Args): DatabaseAdapterObj<PostgresAdapter>
       versionsSuffix: args.versionsSuffix || '_v',
 
       // DatabaseAdapter
-      beginTransaction: args.transactionOptions === false ? undefined : beginTransaction,
+      beginTransaction:
+        args.transactionOptions === false ? defaultBeginTransaction() : beginTransaction,
       commitTransaction,
       connect,
       convertPathToJSONTraversal,
@@ -142,6 +143,7 @@ export function postgresAdapter(args: Args): DatabaseAdapterObj<PostgresAdapter>
       migrateReset,
       migrateStatus,
       migrationDir,
+      packageName: '@payloadcms/db-postgres',
       payload,
       queryDrafts,
       rejectInitializing,
@@ -152,6 +154,7 @@ export function postgresAdapter(args: Args): DatabaseAdapterObj<PostgresAdapter>
       updateGlobalVersion,
       updateOne,
       updateVersion,
+      upsert: updateOne,
     })
   }
 
@@ -160,3 +163,6 @@ export function postgresAdapter(args: Args): DatabaseAdapterObj<PostgresAdapter>
     init: adapter,
   }
 }
+
+export type { MigrateDownArgs, MigrateUpArgs } from '@payloadcms/drizzle/postgres'
+export { sql } from 'drizzle-orm'

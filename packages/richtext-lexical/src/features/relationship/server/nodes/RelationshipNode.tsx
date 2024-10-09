@@ -10,15 +10,17 @@ import type {
   NodeKey,
   Spread,
 } from 'lexical'
-import type { CollectionSlug } from 'payload'
+import type { CollectionSlug, DataFromCollectionSlug } from 'payload'
 import type { JSX } from 'react'
 
 import { DecoratorBlockNode } from '@lexical/react/LexicalDecoratorBlockNode.js'
 
 export type RelationshipData = {
-  relationTo: CollectionSlug
-  value: number | string
-}
+  [TCollectionSlug in CollectionSlug]: {
+    relationTo: TCollectionSlug
+    value: DataFromCollectionSlug<TCollectionSlug> | number | string
+  }
+}[CollectionSlug]
 
 export type SerializedRelationshipNode = {
   children?: never // required so that our typed editor state doesn't automatically add children
@@ -102,7 +104,7 @@ export class RelationshipServerNode extends DecoratorBlockNode {
     return false
   }
 
-  decorate(editor: LexicalEditor, config: EditorConfig): JSX.Element {
+  decorate(editor: LexicalEditor, config: EditorConfig): JSX.Element | null {
     return null
   }
 
@@ -146,7 +148,7 @@ export function $createServerRelationshipNode(data: RelationshipData): Relations
 }
 
 export function $isServerRelationshipNode(
-  node: LexicalNode | RelationshipServerNode | null | undefined,
+  node: LexicalNode | null | RelationshipServerNode | undefined,
 ): node is RelationshipServerNode {
   return node instanceof RelationshipServerNode
 }

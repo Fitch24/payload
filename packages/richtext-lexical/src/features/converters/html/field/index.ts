@@ -91,7 +91,7 @@ function findFieldPathAndSiblingFields(
 ): {
   path: string[]
   siblingFields: Field[]
-} {
+} | null {
   for (const curField of fields) {
     if (curField === field) {
       return {
@@ -162,6 +162,8 @@ export const lexicalHTML: (
       afterRead: [
         async ({
           collection,
+          currentDepth,
+          depth,
           draft,
           field,
           global,
@@ -170,14 +172,15 @@ export const lexicalHTML: (
           showHiddenFields,
           siblingData,
         }) => {
-          const fields = collection ? collection.fields : global.fields
+          const fields = collection ? collection.fields : global!.fields
 
           const foundSiblingFields = findFieldPathAndSiblingFields(fields, [], field)
 
-          if (!foundSiblingFields)
+          if (!foundSiblingFields) {
             throw new Error(
               `Could not find sibling fields of current lexicalHTML field with name ${field?.name}`,
             )
+          }
 
           const { siblingFields } = foundSiblingFields
           const lexicalField: RichTextField<SerializedEditorState, AdapterProps> =
@@ -217,7 +220,9 @@ export const lexicalHTML: (
 
           return await convertLexicalToHTML({
             converters: finalConverters,
+            currentDepth,
             data: lexicalFieldData,
+            depth,
             draft,
             overrideAccess,
             req,

@@ -141,6 +141,18 @@ describe('uploads', () => {
     await saveDocAndAssert(page)
   })
 
+  test('should properly create IOS file upload', async () => {
+    await page.goto(mediaURL.create)
+
+    await page.setInputFiles('input[type="file"]', path.resolve(dirname, './ios-image.jpeg'))
+
+    const filename = page.locator('.file-field__filename')
+
+    await expect(filename).toHaveValue('ios-image.jpeg')
+
+    await saveDocAndAssert(page)
+  })
+
   test('should create animated file upload', async () => {
     await page.goto(animatedTypeMediaURL.create)
 
@@ -286,7 +298,7 @@ describe('uploads', () => {
     await page.locator('.field-type:nth-of-type(2) .icon--x').click()
 
     // choose from existing
-    await openDocDrawer(page, '.list-drawer__toggler')
+    await openDocDrawer(page, '.upload__listToggler')
 
     await expect(page.locator('.row-3 .cell-title')).toContainText('draft')
   })
@@ -297,9 +309,9 @@ describe('uploads', () => {
 
     // remove the selection and open the list drawer
     await wait(500) // flake workaround
-    await page.locator('.file-details__remove').click()
+    await page.locator('#field-audio .upload-relationship-details__remove').click()
 
-    await openDocDrawer(page, '.upload__toggler.list-drawer__toggler')
+    await openDocDrawer(page, '#field-audio  .upload__listToggler')
 
     const listDrawer = page.locator('[id^=list-drawer_1_]')
     await expect(listDrawer).toBeVisible()
@@ -332,9 +344,9 @@ describe('uploads', () => {
 
     // remove the selection and open the list drawer
     await wait(500) // flake workaround
-    await page.locator('.file-details__remove').click()
+    await page.locator('#field-audio .upload-relationship-details__remove').click()
 
-    await openDocDrawer(page, '.upload__toggler.list-drawer__toggler')
+    await openDocDrawer(page, '.upload__listToggler')
 
     const listDrawer = page.locator('[id^=list-drawer_1_]')
     await expect(listDrawer).toBeVisible()
@@ -618,6 +630,35 @@ describe('uploads', () => {
 
       // without focal point update this generated size was equal to 1736
       expect(redDoc.sizes.focalTest.filesize).toEqual(1598)
+    })
+
+    test('should resize image after crop if resizeOptions defined', async () => {
+      await page.goto(animatedTypeMediaURL.create)
+      await page.waitForURL(animatedTypeMediaURL.create)
+
+      const fileChooserPromise = page.waitForEvent('filechooser')
+      await page.getByText('Select a file').click()
+      const fileChooser = await fileChooserPromise
+      await wait(1000)
+      await fileChooser.setFiles(path.join(dirname, 'test-image.jpg'))
+
+      await page.locator('.file-field__edit').click()
+
+      // set crop
+      await page.locator('.edit-upload__input input[name="Width (px)"]').fill('400')
+      await page.locator('.edit-upload__input input[name="Height (px)"]').fill('800')
+      // set focal point
+      await page.locator('.edit-upload__input input[name="X %"]').fill('75') // init left focal point
+      await page.locator('.edit-upload__input input[name="Y %"]').fill('50') // init top focal point
+
+      await page.locator('button:has-text("Apply Changes")').click()
+      await page.waitForSelector('button#action-save')
+      await page.locator('button#action-save').click()
+      await expect(page.locator('.payload-toast-container')).toContainText('successfully')
+      await wait(1000) // Wait for the save
+
+      const resizeOptionMedia = page.locator('.file-meta .file-meta__size-type')
+      await expect(resizeOptionMedia).toContainText('200x200')
     })
   })
 

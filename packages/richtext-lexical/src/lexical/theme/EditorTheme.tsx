@@ -1,3 +1,4 @@
+'use client'
 import type { EditorThemeClasses } from 'lexical'
 
 export const LexicalEditorTheme: EditorThemeClasses = {
@@ -91,6 +92,7 @@ export const LexicalEditorTheme: EditorThemeClasses = {
   tableCellSelected: 'LexicalEditorTheme__tableCellSelected',
   tableCellSortedIndicator: 'LexicalEditorTheme__tableCellSortedIndicator',
   tableResizeRuler: 'LexicalEditorTheme__tableCellResizeRuler',
+  tableRowStriping: 'LexicalEditorTheme__tableRowStriping',
   tableSelected: 'LexicalEditorTheme__tableSelected',
   text: {
     bold: 'LexicalEditorTheme__textBold',

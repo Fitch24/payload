@@ -229,7 +229,8 @@ export const OPTIONS =
 
 export const GET =
   (config: Promise<SanitizedConfig> | SanitizedConfig) =>
-  async (request: Request, { params: { slug } }: { params: { slug: string[] } }) => {
+  async (request: Request, { params: paramsPromise }: { params: Promise<{ slug: string[] }> }) => {
+    const { slug } = await paramsPromise
     const [slug1, slug2, slug3, slug4] = slug
     let req: PayloadRequest
     let res: Response
@@ -246,7 +247,9 @@ export const GET =
         request,
       })
 
-      if (disableEndpoints) return disableEndpoints
+      if (disableEndpoints) {
+        return disableEndpoints
+      }
 
       collection = req.payload.collections?.[slug1]
 
@@ -256,7 +259,9 @@ export const GET =
           endpoints: collection.config.endpoints,
           request,
         })
-        if (disableEndpoints) return disableEndpoints
+        if (disableEndpoints) {
+          return disableEndpoints
+        }
 
         const customEndpointResponse = await handleCustomEndpoints({
           endpoints: collection.config.endpoints,
@@ -327,7 +332,9 @@ export const GET =
           endpoints: globalConfig.endpoints,
           request,
         })
-        if (disableEndpoints) return disableEndpoints
+        if (disableEndpoints) {
+          return disableEndpoints
+        }
 
         const customEndpointResponse = await handleCustomEndpoints({
           endpoints: globalConfig.endpoints,
@@ -403,7 +410,9 @@ export const GET =
         req,
       })
 
-      if (customEndpointResponse) return customEndpointResponse
+      if (customEndpointResponse) {
+        return customEndpointResponse
+      }
 
       return RouteNotFoundResponse({
         slug,
@@ -421,7 +430,8 @@ export const GET =
 
 export const POST =
   (config: Promise<SanitizedConfig> | SanitizedConfig) =>
-  async (request: Request, { params: { slug } }: { params: { slug: string[] } }) => {
+  async (request: Request, { params: paramsPromise }: { params: Promise<{ slug: string[] }> }) => {
+    const { slug } = await paramsPromise
     const [slug1, slug2, slug3, slug4] = slug
     let req: PayloadRequest
     let res: Response
@@ -429,7 +439,7 @@ export const POST =
 
     const overrideHttpMethod = request.headers.get('X-HTTP-Method-Override')
     if (overrideHttpMethod === 'GET') {
-      return await GET(config)(request, { params: { slug } })
+      return await GET(config)(request, { params: paramsPromise })
     }
 
     try {
@@ -445,7 +455,9 @@ export const POST =
         request,
       })
 
-      if (disableEndpoints) return disableEndpoints
+      if (disableEndpoints) {
+        return disableEndpoints
+      }
 
       if (collection) {
         req.routeParams.collection = slug1
@@ -453,7 +465,9 @@ export const POST =
           endpoints: collection.config.endpoints,
           request,
         })
-        if (disableEndpoints) return disableEndpoints
+        if (disableEndpoints) {
+          return disableEndpoints
+        }
 
         const customEndpointResponse = await handleCustomEndpoints({
           endpoints: collection.config.endpoints,
@@ -516,7 +530,9 @@ export const POST =
           endpoints: globalConfig.endpoints,
           request,
         })
-        if (disableEndpoints) return disableEndpoints
+        if (disableEndpoints) {
+          return disableEndpoints
+        }
 
         const customEndpointResponse = await handleCustomEndpoints({
           endpoints: globalConfig.endpoints,
@@ -585,7 +601,9 @@ export const POST =
         req,
       })
 
-      if (customEndpointResponse) return customEndpointResponse
+      if (customEndpointResponse) {
+        return customEndpointResponse
+      }
 
       return RouteNotFoundResponse({
         slug,
@@ -603,7 +621,8 @@ export const POST =
 
 export const DELETE =
   (config: Promise<SanitizedConfig> | SanitizedConfig) =>
-  async (request: Request, { params: { slug } }: { params: { slug: string[] } }) => {
+  async (request: Request, { params: paramsPromise }: { params: Promise<{ slug: string[] }> }) => {
+    const { slug } = await paramsPromise
     const [slug1, slug2] = slug
     let req: PayloadRequest
     let res: Response
@@ -620,7 +639,9 @@ export const DELETE =
         endpoints: req.payload.config.endpoints,
         request,
       })
-      if (disableEndpoints) return disableEndpoints
+      if (disableEndpoints) {
+        return disableEndpoints
+      }
 
       if (collection) {
         req.routeParams.collection = slug1
@@ -629,7 +650,9 @@ export const DELETE =
           endpoints: collection.config.endpoints,
           request,
         })
-        if (disableEndpoints) return disableEndpoints
+        if (disableEndpoints) {
+          return disableEndpoints
+        }
 
         const customEndpointResponse = await handleCustomEndpoints({
           endpoints: collection.config.endpoints,
@@ -679,7 +702,9 @@ export const DELETE =
         req,
       })
 
-      if (customEndpointResponse) return customEndpointResponse
+      if (customEndpointResponse) {
+        return customEndpointResponse
+      }
 
       return RouteNotFoundResponse({
         slug,
@@ -697,7 +722,8 @@ export const DELETE =
 
 export const PATCH =
   (config: Promise<SanitizedConfig> | SanitizedConfig) =>
-  async (request: Request, { params: { slug } }: { params: { slug: string[] } }) => {
+  async (request: Request, { params: paramsPromise }: { params: Promise<{ slug: string[] }> }) => {
+    const { slug } = await paramsPromise
     const [slug1, slug2] = slug
     let req: PayloadRequest
     let res: Response
@@ -714,7 +740,9 @@ export const PATCH =
         endpoints: req.payload.config.endpoints,
         request,
       })
-      if (disableEndpoints) return disableEndpoints
+      if (disableEndpoints) {
+        return disableEndpoints
+      }
 
       if (collection) {
         req.routeParams.collection = slug1
@@ -723,7 +751,9 @@ export const PATCH =
           endpoints: collection.config.endpoints,
           request,
         })
-        if (disableEndpoints) return disableEndpoints
+        if (disableEndpoints) {
+          return disableEndpoints
+        }
 
         const customEndpointResponse = await handleCustomEndpoints({
           endpoints: collection.config.endpoints,
@@ -774,7 +804,9 @@ export const PATCH =
         req,
       })
 
-      if (customEndpointResponse) return customEndpointResponse
+      if (customEndpointResponse) {
+        return customEndpointResponse
+      }
 
       return RouteNotFoundResponse({
         slug,

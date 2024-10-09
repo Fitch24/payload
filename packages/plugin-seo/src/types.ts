@@ -1,24 +1,68 @@
 import type { DocumentInfoContext } from '@payloadcms/ui'
-import type { Field, PayloadRequest, TextField, TextareaField, UploadField } from 'payload'
+import type {
+  CollectionConfig,
+  Field,
+  GlobalConfig,
+  PayloadRequest,
+  TextareaField,
+  TextField,
+  UploadField,
+} from 'payload'
+
+export type PartialDocumentInfoContext = Pick<
+  DocumentInfoContext,
+  | 'collectionSlug'
+  | 'docPermissions'
+  | 'globalSlug'
+  | 'hasPublishPermission'
+  | 'hasSavePermission'
+  | 'id'
+  | 'initialData'
+  | 'initialState'
+  | 'preferencesKey'
+  | 'publishedDoc'
+  | 'title'
+  | 'versionsCount'
+>
 
 export type GenerateTitle<T = any> = (
-  args: { doc: T; locale?: string; req: PayloadRequest } & DocumentInfoContext,
+  args: {
+    collectionConfig?: CollectionConfig
+    doc: T
+    globalConfig?: GlobalConfig
+    locale?: string
+    req: PayloadRequest
+  } & PartialDocumentInfoContext,
 ) => Promise<string> | string
 
 export type GenerateDescription<T = any> = (
   args: {
+    collectionConfig?: CollectionConfig
     doc: T
+    globalConfig?: GlobalConfig
     locale?: string
     req: PayloadRequest
-  } & DocumentInfoContext,
+  } & PartialDocumentInfoContext,
 ) => Promise<string> | string
 
 export type GenerateImage<T = any> = (
-  args: { doc: T; locale?: string; req: PayloadRequest } & DocumentInfoContext,
+  args: {
+    collectionConfig?: CollectionConfig
+    doc: T
+    globalConfig?: GlobalConfig
+    locale?: string
+    req: PayloadRequest
+  } & PartialDocumentInfoContext,
 ) => Promise<string> | string
 
 export type GenerateURL<T = any> = (
-  args: { doc: T; locale?: string; req: PayloadRequest } & DocumentInfoContext,
+  args: {
+    collectionConfig?: CollectionConfig
+    doc: T
+    globalConfig?: GlobalConfig
+    locale?: string
+    req: PayloadRequest
+  } & PartialDocumentInfoContext,
 ) => Promise<string> | string
 
 export type SEOPluginConfig = {

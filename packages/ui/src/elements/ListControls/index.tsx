@@ -3,7 +3,7 @@ import type { ClientCollectionConfig, ClientField, Where } from 'payload'
 
 import { useWindowInfo } from '@faceless-ui/window-info'
 import { getTranslation } from '@payloadcms/translations'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { Fragment, useEffect, useRef, useState } from 'react'
 import AnimateHeightImport from 'react-animate-height'
 
 const AnimateHeight = (AnimateHeightImport.default ||
@@ -14,7 +14,6 @@ import { ChevronIcon } from '../../icons/Chevron/index.js'
 import { SearchIcon } from '../../icons/Search/index.js'
 import { useListInfo } from '../../providers/ListInfo/index.js'
 import { useListQuery } from '../../providers/ListQuery/index.js'
-import { useSearchParams } from '../../providers/SearchParams/index.js'
 import { useTranslation } from '../../providers/Translation/index.js'
 import { ColumnSelector } from '../ColumnSelector/index.js'
 import { DeleteMany } from '../DeleteMany/index.js'
@@ -48,17 +47,13 @@ export type ListControlsProps = {
 export const ListControls: React.FC<ListControlsProps> = (props) => {
   const { collectionConfig, enableColumns = true, enableSort = false, fields } = props
 
-  const { handleSearchChange } = useListQuery()
-  const { collectionSlug } = useListInfo()
-  const { searchParams } = useSearchParams()
+  const { handleSearchChange, params } = useListQuery()
+  const { beforeActions, collectionSlug, disableBulkDelete, disableBulkEdit } = useListInfo()
   const titleField = useUseTitleField(collectionConfig, fields)
   const { i18n, t } = useTranslation()
   const {
     breakpoints: { s: smallBreak },
   } = useWindowInfo()
-  const [search, setSearch] = useState(
-    typeof searchParams?.search === 'string' ? searchParams?.search : '',
-  )
 
   const searchLabel =
     (titleField &&
@@ -81,21 +76,21 @@ export const ListControls: React.FC<ListControlsProps> = (props) => {
     t('general:searchBy', { label: getTranslation(searchLabel, i18n) }),
   )
 
-  const hasWhereParam = useRef(Boolean(searchParams?.where))
+  const hasWhereParam = useRef(Boolean(params?.where))
 
-  const shouldInitializeWhereOpened = validateWhereQuery(searchParams?.where)
+  const shouldInitializeWhereOpened = validateWhereQuery(params?.where)
   const [visibleDrawer, setVisibleDrawer] = useState<'columns' | 'sort' | 'where'>(
     shouldInitializeWhereOpened ? 'where' : undefined,
   )
 
   useEffect(() => {
-    if (hasWhereParam.current && !searchParams?.where) {
+    if (hasWhereParam.current && !params?.where) {
       setVisibleDrawer(undefined)
       hasWhereParam.current = false
-    } else if (searchParams?.where) {
+    } else if (params?.where) {
       hasWhereParam.current = true
     }
-  }, [setVisibleDrawer, searchParams?.where])
+  }, [setVisibleDrawer, params?.where])
 
   useEffect(() => {
     if (listSearchableFields?.length > 0) {
@@ -130,34 +125,36 @@ export const ListControls: React.FC<ListControlsProps> = (props) => {
       <div className={`${baseClass}__wrap`}>
         <SearchIcon />
         <SearchFilter
-          fieldName={'name' in titleField ? titleField?.name : null}
+          fieldName={titleField && 'name' in titleField ? titleField?.name : null}
           handleChange={(search) => {
             return void handleSearchChange(search)
           }}
-          initialParams={searchParams}
+          // @ts-expect-error @todo: fix types
+          initialParams={params}
           key={collectionSlug}
           label={searchLabelTranslated.current}
-          setValue={setSearch}
-          value={search}
         />
         <div className={`${baseClass}__buttons`}>
           <div className={`${baseClass}__buttons-wrap`}>
             {!smallBreak && (
               <React.Fragment>
-                <EditMany collection={collectionConfig} fields={fields} />
-                <PublishMany collection={collectionConfig} />
-                <UnpublishMany collection={collectionConfig} />
-                <DeleteMany collection={collectionConfig} />
+                {beforeActions && beforeActions}
+                {!disableBulkEdit && (
+                  <Fragment>
+                    <EditMany collection={collectionConfig} fields={fields} />
+                    <PublishMany collection={collectionConfig} />
+                    <UnpublishMany collection={collectionConfig} />
+                  </Fragment>
+                )}
+                {!disableBulkDelete && <DeleteMany collection={collectionConfig} />}
               </React.Fragment>
             )}
             {enableColumns && (
               <Pill
                 aria-controls={`${baseClass}-columns`}
                 aria-expanded={visibleDrawer === 'columns'}
-                className={`${baseClass}__toggle-columns ${
-                  visibleDrawer === 'columns' ? `${baseClass}__buttons-active` : ''
-                }`}
-                icon={<ChevronIcon />}
+                className={`${baseClass}__toggle-columns`}
+                icon={<ChevronIcon direction={visibleDrawer === 'columns' ? 'up' : 'down'} />}
                 onClick={() =>
                   setVisibleDrawer(visibleDrawer !== 'columns' ? 'columns' : undefined)
                 }
@@ -169,10 +166,8 @@ export const ListControls: React.FC<ListControlsProps> = (props) => {
             <Pill
               aria-controls={`${baseClass}-where`}
               aria-expanded={visibleDrawer === 'where'}
-              className={`${baseClass}__toggle-where ${
-                visibleDrawer === 'where' ? `${baseClass}__buttons-active` : ''
-              }`}
-              icon={<ChevronIcon />}
+              className={`${baseClass}__toggle-where`}
+              icon={<ChevronIcon direction={visibleDrawer === 'where' ? 'up' : 'down'} />}
               onClick={() => setVisibleDrawer(visibleDrawer !== 'where' ? 'where' : undefined)}
               pillStyle="light"
             >
@@ -211,7 +206,7 @@ export const ListControls: React.FC<ListControlsProps> = (props) => {
           collectionPluralLabel={collectionConfig?.labels?.plural}
           collectionSlug={collectionConfig.slug}
           fields={fields}
-          key={String(hasWhereParam.current && !searchParams?.where)}
+          key={String(hasWhereParam.current && !params?.where)}
         />
       </AnimateHeight>
       {enableSort && (

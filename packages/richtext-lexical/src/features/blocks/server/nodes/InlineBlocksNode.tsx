@@ -32,7 +32,7 @@ export type SerializedServerInlineBlockNode = Spread<
   SerializedLexicalNode
 >
 
-export class ServerInlineBlockNode extends DecoratorNode<React.ReactElement> {
+export class ServerInlineBlockNode extends DecoratorNode<null | React.ReactElement> {
   __fields: InlineBlockFields
 
   constructor({ fields, key }: { fields: InlineBlockFields; key?: NodeKey }) {
@@ -74,7 +74,7 @@ export class ServerInlineBlockNode extends DecoratorNode<React.ReactElement> {
     return element
   }
 
-  decorate(editor: LexicalEditor, config: EditorConfig): JSX.Element {
+  decorate(editor: LexicalEditor, config: EditorConfig): JSX.Element | null {
     return null
   }
 
@@ -131,7 +131,7 @@ export function $createServerInlineBlockNode(
 }
 
 export function $isServerInlineBlockNode(
-  node: LexicalNode | ServerInlineBlockNode | null | undefined,
+  node: LexicalNode | null | ServerInlineBlockNode | undefined,
 ): node is ServerInlineBlockNode {
   return node instanceof ServerInlineBlockNode
 }

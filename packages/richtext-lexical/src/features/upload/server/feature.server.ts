@@ -47,7 +47,7 @@ export const UploadFeature = createServerFeature<
   UploadFeatureProps,
   UploadFeaturePropsClient
 >({
-  feature: async ({ config: _config, isRoot, props }) => {
+  feature: async ({ config: _config, isRoot, parentIsLocalized, props }) => {
     if (!props) {
       props = { collections: {} }
     }
@@ -70,6 +70,7 @@ export const UploadFeature = createServerFeature<
         props.collections[collection].fields = await sanitizeFields({
           config: _config as unknown as Config,
           fields: props.collections[collection].fields,
+          parentIsLocalized,
           requireFieldLevelRichTextEditor: isRoot,
           validRelationships,
         })
@@ -80,7 +81,9 @@ export const UploadFeature = createServerFeature<
       ClientFeature: '@payloadcms/richtext-lexical/client#UploadFeatureClient',
       clientFeatureProps: clientProps,
       generateSchemaMap: ({ props }) => {
-        if (!props?.collections) return null
+        if (!props?.collections) {
+          return null
+        }
 
         const schemaMap = new Map<string, Field[]>()
 
@@ -97,9 +100,17 @@ export const UploadFeature = createServerFeature<
         createNode({
           converters: {
             html: {
-              converter: async ({ draft, node, overrideAccess, req, showHiddenFields }) => {
-                // @ts-expect-error
-                const id = node?.value?.id || node?.value // for backwards-compatibility
+              converter: async ({
+                currentDepth,
+                depth,
+                draft,
+                node,
+                overrideAccess,
+                req,
+                showHiddenFields,
+              }) => {
+                // @ts-expect-error - for backwards-compatibility
+                const id = node?.value?.id || node?.value
 
                 if (req?.payload) {
                   const uploadDocument: {
@@ -110,9 +121,9 @@ export const UploadFeature = createServerFeature<
                     await populate({
                       id,
                       collectionSlug: node.relationTo,
-                      currentDepth: 0,
+                      currentDepth,
                       data: uploadDocument,
-                      depth: 1,
+                      depth,
                       draft,
                       key: 'value',
                       overrideAccess,
@@ -130,7 +141,7 @@ export const UploadFeature = createServerFeature<
                     return `<img />`
                   }
 
-                  const url = getAbsoluteURL(uploadDocument?.value?.url, req?.payload)
+                  const url = getAbsoluteURL(uploadDocument?.value?.url ?? '', req?.payload)
 
                   /**
                    * If the upload is not an image, return a link to the upload

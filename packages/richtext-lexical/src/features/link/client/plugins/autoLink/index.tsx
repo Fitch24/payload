@@ -40,7 +40,9 @@ export function createLinkMatcherWithRegExp(
 ) {
   return (text: string) => {
     const match = regExp.exec(text)
-    if (match === null) return null
+    if (match === null) {
+      return null
+    }
     return {
       index: match.index,
       length: match[0].length,
@@ -177,11 +179,11 @@ function $createAutoLinkNode_(
   endIndex: number,
   match: LinkMatcherResult,
 ): TextNode | undefined {
-  const fields: LinkFields = {
+  const fields = {
     linkType: 'custom',
     url: match.url,
     ...match.fields,
-  }
+  } as LinkFields
 
   const linkNode = $createAutoLinkNode({ fields })
   if (nodes.length === 1) {
@@ -208,7 +210,7 @@ function $createAutoLinkNode_(
     } else {
       ;[, firstLinkTextNode] = firstTextNode.splitText(startIndex)
     }
-    const linkNodes = []
+    const linkNodes: LexicalNode[] = []
     let remainingTextNode
     for (let i = 1; i < nodes.length; i++) {
       const currentNode = nodes[i]

@@ -18,8 +18,8 @@ import { AutoLinkNode } from '../nodes/AutoLinkNode.js'
 import { $isLinkNode, LinkNode, TOGGLE_LINK_COMMAND } from '../nodes/LinkNode.js'
 import { AutoLinkPlugin } from './plugins/autoLink/index.js'
 import { ClickableLinkPlugin } from './plugins/clickableLink/index.js'
-import { TOGGLE_LINK_WITH_MODAL_COMMAND } from './plugins/floatingLinkEditor/LinkEditor/commands.js'
 import { FloatingLinkEditorPlugin } from './plugins/floatingLinkEditor/index.js'
+import { TOGGLE_LINK_WITH_MODAL_COMMAND } from './plugins/floatingLinkEditor/LinkEditor/commands.js'
 import { LinkPlugin } from './plugins/link/index.js'
 
 export type ClientProps = ExclusiveLinkCollectionsProps
@@ -45,7 +45,7 @@ const toolbarGroups: ToolbarGroup[] = [
       },
       onSelect: ({ editor, isActive }) => {
         if (!isActive) {
-          let selectedText: string = null
+          let selectedText: string | undefined
           let selectedNodes: LexicalNode[] = []
           editor.getEditorState().read(() => {
             selectedText = $getSelection()?.getTextContent()

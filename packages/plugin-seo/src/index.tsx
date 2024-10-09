@@ -1,6 +1,5 @@
 import type { Config, GroupField, TabsField, TextField } from 'payload'
 
-import { addDataAndFileToRequest } from '@payloadcms/next/utilities'
 import { deepMergeSimple } from 'payload/shared'
 
 import type {
@@ -29,7 +28,7 @@ export const seoPlugin =
           OverviewField({}),
           MetaTitleField({
             hasGenerateFn: typeof pluginConfig?.generateTitle === 'function',
-            overrides: pluginConfig?.fieldOverrides?.title as unknown as TextField,
+            overrides: pluginConfig?.fieldOverrides?.title,
           }),
           MetaDescriptionField({
             hasGenerateFn: typeof pluginConfig?.generateDescription === 'function',
@@ -133,13 +132,26 @@ export const seoPlugin =
         ...(config.endpoints ?? []),
         {
           handler: async (req) => {
-            await addDataAndFileToRequest(req)
+            const data: Omit<
+              Parameters<GenerateTitle>[0],
+              'collectionConfig' | 'globalConfig' | 'req'
+            > = await req.json()
+
+            if (data) {
+              req.data = data
+            }
 
             const result = pluginConfig.generateTitle
               ? await pluginConfig.generateTitle({
-                  ...req.data,
+                  ...data,
+                  collectionConfig: req.data.collectionSlug
+                    ? config.collections?.find((c) => c.slug === req.data.collectionSlug)
+                    : null,
+                  globalConfig: req.data.globalSlug
+                    ? config.globals?.find((g) => g.slug === req.data.globalSlug)
+                    : null,
                   req,
-                } as unknown as Parameters<GenerateTitle>[0])
+                } satisfies Parameters<GenerateTitle>[0])
               : ''
             return new Response(JSON.stringify({ result }), { status: 200 })
           },
@@ -148,13 +160,26 @@ export const seoPlugin =
         },
         {
           handler: async (req) => {
-            await addDataAndFileToRequest(req)
+            const data: Omit<
+              Parameters<GenerateTitle>[0],
+              'collectionConfig' | 'globalConfig' | 'req'
+            > = await req.json()
+
+            if (data) {
+              req.data = data
+            }
 
             const result = pluginConfig.generateDescription
               ? await pluginConfig.generateDescription({
-                  ...req.data,
+                  ...data,
+                  collectionConfig: req.data.collectionSlug
+                    ? config.collections?.find((c) => c.slug === req.data.collectionSlug)
+                    : null,
+                  globalConfig: req.data.globalSlug
+                    ? config.globals?.find((g) => g.slug === req.data.globalSlug)
+                    : null,
                   req,
-                } as unknown as Parameters<GenerateDescription>[0])
+                } satisfies Parameters<GenerateDescription>[0])
               : ''
             return new Response(JSON.stringify({ result }), { status: 200 })
           },
@@ -163,13 +188,26 @@ export const seoPlugin =
         },
         {
           handler: async (req) => {
-            await addDataAndFileToRequest(req)
+            const data: Omit<
+              Parameters<GenerateTitle>[0],
+              'collectionConfig' | 'globalConfig' | 'req'
+            > = await req.json()
+
+            if (data) {
+              req.data = data
+            }
 
             const result = pluginConfig.generateURL
               ? await pluginConfig.generateURL({
-                  ...req.data,
+                  ...data,
+                  collectionConfig: req.data.collectionSlug
+                    ? config.collections?.find((c) => c.slug === req.data.collectionSlug)
+                    : null,
+                  globalConfig: req.data.globalSlug
+                    ? config.globals?.find((g) => g.slug === req.data.globalSlug)
+                    : null,
                   req,
-                } as unknown as Parameters<GenerateURL>[0])
+                } satisfies Parameters<GenerateURL>[0])
               : ''
             return new Response(JSON.stringify({ result }), { status: 200 })
           },
@@ -178,13 +216,26 @@ export const seoPlugin =
         },
         {
           handler: async (req) => {
-            await addDataAndFileToRequest(req)
+            const data: Omit<
+              Parameters<GenerateTitle>[0],
+              'collectionConfig' | 'globalConfig' | 'req'
+            > = await req.json()
+
+            if (data) {
+              req.data = data
+            }
 
             const result = pluginConfig.generateImage
               ? await pluginConfig.generateImage({
-                  ...req.data,
+                  ...data,
+                  collectionConfig: req.data.collectionSlug
+                    ? config.collections?.find((c) => c.slug === req.data.collectionSlug)
+                    : null,
+                  globalConfig: req.data.globalSlug
+                    ? config.globals?.find((g) => g.slug === req.data.globalSlug)
+                    : null,
                   req,
-                } as unknown as Parameters<GenerateImage>[0])
+                } as Parameters<GenerateImage>[0])
               : ''
             return new Response(result, { status: 200 })
           },

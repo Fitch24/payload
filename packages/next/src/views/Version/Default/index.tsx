@@ -19,8 +19,8 @@ import RenderFieldsToDiff from '../RenderFieldsToDiff/index.js'
 import Restore from '../Restore/index.js'
 import { SelectComparison } from '../SelectComparison/index.js'
 import { SelectLocales } from '../SelectLocales/index.js'
-import { SetStepNav } from './SetStepNav.js'
 import './index.scss'
+import { SetStepNav } from './SetStepNav.js'
 
 const baseClass = 'view-version'
 
@@ -76,6 +76,8 @@ export const DefaultVersionView: React.FC<DefaultVersionsViewProps> = ({
 
   const localeValues = locales && locales.map((locale) => locale.value)
 
+  const draftsEnabled = Boolean((collectionConfig || globalConfig)?.versions.drafts)
+
   return (
     <main className={baseClass}>
       <SetViewActions
@@ -118,6 +120,7 @@ export const DefaultVersionView: React.FC<DefaultVersionsViewProps> = ({
         <div className={`${baseClass}__controls`}>
           <SelectComparison
             baseURL={compareBaseURL}
+            draftsEnabled={draftsEnabled}
             latestDraftVersion={latestDraftVersion}
             latestPublishedVersion={latestPublishedVersion}
             onChange={setCompareValue}

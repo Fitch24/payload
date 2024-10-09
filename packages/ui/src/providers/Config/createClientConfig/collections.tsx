@@ -11,6 +11,7 @@ import type {
   SanitizedCollectionConfig,
   ServerOnlyCollectionAdminProperties,
   ServerOnlyCollectionProperties,
+  ServerOnlyUploadProperties,
 } from 'payload'
 import type React from 'react'
 
@@ -18,21 +19,46 @@ import { deepCopyObjectSimple } from 'payload'
 
 import { createClientFields } from './fields.js'
 
+const serverOnlyCollectionProperties: Partial<ServerOnlyCollectionProperties>[] = [
+  'hooks',
+  'access',
+  'endpoints',
+  'custom',
+  'joins',
+  // `upload`
+  // `admin`
+  // are all handled separately
+]
+
+const serverOnlyUploadProperties: Partial<ServerOnlyUploadProperties>[] = [
+  'adminThumbnail',
+  'externalFileHeaderFilter',
+  'handlers',
+  'modifyResponseHeaders',
+  'withMetadata',
+]
+
+const serverOnlyCollectionAdminProperties: Partial<ServerOnlyCollectionAdminProperties>[] = [
+  'hidden',
+  'preview',
+  // `livePreview` is handled separately
+]
+
 export const createClientCollectionConfig = ({
-  DefaultEditView,
-  DefaultListView,
   clientCollection,
   collection,
   createMappedComponent,
+  DefaultEditView,
+  DefaultListView,
   i18n,
   importMap,
   payload,
 }: {
-  DefaultEditView: React.FC<EditViewProps>
-  DefaultListView: React.FC<AdminViewProps>
   clientCollection: ClientCollectionConfig
   collection: SanitizedCollectionConfig
   createMappedComponent: CreateMappedComponent
+  DefaultEditView: React.FC<EditViewProps>
+  DefaultListView: React.FC<AdminViewProps>
   i18n: I18nClient
   importMap: ImportMap
   payload: Payload
@@ -46,16 +72,6 @@ export const createClientCollectionConfig = ({
     payload,
   })
 
-  const serverOnlyCollectionProperties: Partial<ServerOnlyCollectionProperties>[] = [
-    'hooks',
-    'access',
-    'endpoints',
-    'custom',
-    // `upload`
-    // `admin`
-    // are all handled separately
-  ]
-
   serverOnlyCollectionProperties.forEach((key) => {
     if (key in clientCollection) {
       delete clientCollection[key]
@@ -63,15 +79,18 @@ export const createClientCollectionConfig = ({
   })
 
   if ('upload' in clientCollection && typeof clientCollection.upload === 'object') {
-    delete clientCollection.upload.handlers
-    delete clientCollection.upload.adminThumbnail
-    delete clientCollection.upload.externalFileHeaderFilter
-    delete clientCollection.upload.withMetadata
+    serverOnlyUploadProperties.forEach((key) => {
+      if (key in clientCollection.upload) {
+        delete clientCollection.upload[key]
+      }
+    })
 
     if ('imageSizes' in clientCollection.upload && clientCollection.upload.imageSizes.length) {
       clientCollection.upload.imageSizes = clientCollection.upload.imageSizes.map((size) => {
         const sanitizedSize = { ...size }
-        if ('generateImageName' in sanitizedSize) delete sanitizedSize.generateImageName
+        if ('generateImageName' in sanitizedSize) {
+          delete sanitizedSize.generateImageName
+        }
         return sanitizedSize
       })
     }
@@ -90,12 +109,6 @@ export const createClientCollectionConfig = ({
       }
     })
   }
-
-  const serverOnlyCollectionAdminProperties: Partial<ServerOnlyCollectionAdminProperties>[] = [
-    'hidden',
-    'preview',
-    // `livePreview` is handled separately
-  ]
 
   serverOnlyCollectionAdminProperties.forEach((key) => {
     if (key in clientCollection.admin) {
@@ -210,6 +223,7 @@ export const createClientCollectionConfig = ({
   }
 
   let description = undefined
+
   if (collection.admin?.description) {
     if (
       typeof collection.admin?.description === 'string' ||
@@ -220,20 +234,30 @@ export const createClientCollectionConfig = ({
       description = collection.admin?.description({ t: i18n.t })
     }
   }
+
   clientCollection.admin.description = description
 
-  if (collection.admin.components.edit?.Description) {
-    clientCollection.admin.components.edit.Description = createMappedComponent(
-      collection.admin.components.edit.Description,
+  if (collection.admin.components?.Description) {
+    clientCollection.admin.components.Description = createMappedComponent(
+      collection.admin.components.Description,
       {
-        description,
+        clientProps: {
+          description,
+        },
       },
       undefined,
-      'collection.admin.components.edit.Description',
+      'collection.admin.components.Description',
     )
   }
 
-  clientCollection.admin.description = description
+  // Ensure that the label in Edit view is a string, translate it if it's a function
+  if (collection?.admin?.components?.views?.edit) {
+    Object.entries(collection?.admin?.components?.views?.edit).forEach(([key, view]) => {
+      if ('tab' in view && 'label' in view.tab && typeof view.tab.label === 'function') {
+        collection.admin.components.views.edit[key].tab.label = view.tab.label({ t: i18n.t })
+      }
+    })
+  }
 
   clientCollection.admin.components.views = (
     collection?.admin?.components?.views
@@ -261,7 +285,9 @@ export const createClientCollectionConfig = ({
         ? collection.admin.components.views.edit.default.Component
         : null,
       {
-        collectionSlug: collection.slug,
+        clientProps: {
+          collectionSlug: collection.slug,
+        },
       },
       DefaultEditView,
       'collection.admin.components.views.edit.default',
@@ -280,7 +306,9 @@ export const createClientCollectionConfig = ({
         clientCollection.admin.components.views.edit[key].Component = createMappedComponent(
           view.Component,
           {
-            collectionSlug: collection.slug,
+            clientProps: {
+              collectionSlug: collection.slug,
+            },
           },
           undefined,
           'collection.admin.components.views.edit.key.Component',
@@ -318,7 +346,9 @@ export const createClientCollectionConfig = ({
       ? collection.admin.components.views.list.Component
       : null,
     {
-      collectionSlug: collection.slug,
+      clientProps: {
+        collectionSlug: collection.slug,
+      },
     },
     DefaultListView,
     'collection.admin.components.views.list',
@@ -352,20 +382,20 @@ export const createClientCollectionConfig = ({
 }
 
 export const createClientCollectionConfigs = ({
-  DefaultEditView,
-  DefaultListView,
   clientCollections,
   collections,
   createMappedComponent,
+  DefaultEditView,
+  DefaultListView,
   i18n,
   importMap,
   payload,
 }: {
-  DefaultEditView: React.FC<EditViewProps>
-  DefaultListView: React.FC<AdminViewProps>
   clientCollections: ClientCollectionConfig[]
   collections: SanitizedCollectionConfig[]
   createMappedComponent: CreateMappedComponent
+  DefaultEditView: React.FC<EditViewProps>
+  DefaultListView: React.FC<AdminViewProps>
   i18n: I18nClient
   importMap: ImportMap
   payload: Payload
@@ -374,11 +404,11 @@ export const createClientCollectionConfigs = ({
     const collection = collections[i]
     const clientCollection = clientCollections[i]
     clientCollections[i] = createClientCollectionConfig({
-      DefaultEditView,
-      DefaultListView,
       clientCollection,
       collection,
       createMappedComponent,
+      DefaultEditView,
+      DefaultListView,
       i18n,
       importMap,
       payload,

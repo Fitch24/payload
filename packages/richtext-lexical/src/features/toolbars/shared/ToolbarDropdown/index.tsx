@@ -9,7 +9,7 @@ import { mergeRegister } from '@lexical/utils'
 import { useTranslation } from '@payloadcms/ui'
 import { $getSelection } from 'lexical'
 
-import type { ToolbarGroupItem } from '../../types.js'
+import type { ToolbarDropdownGroup, ToolbarGroupItem } from '../../types.js'
 
 import { useEditorConfigContext } from '../../../../lexical/config/client/EditorConfigProvider.js'
 import { DropDown, DropDownItem } from './DropDown.js'
@@ -67,23 +67,21 @@ const ToolbarItem = ({
 }
 
 export const ToolbarDropdown = ({
-  Icon,
   anchorElem,
   classNames,
   editor,
-  groupKey,
-  items,
+  group,
+  Icon,
   itemsContainerClassNames,
   label,
   maxActiveItems,
   onActiveChange,
 }: {
-  Icon?: React.FC
   anchorElem: HTMLElement
   classNames?: string[]
   editor: LexicalEditor
-  groupKey: string
-  items: ToolbarGroupItem[]
+  group: ToolbarDropdownGroup
+  Icon?: React.FC
   itemsContainerClassNames?: string[]
   label?: string
   /**
@@ -95,11 +93,16 @@ export const ToolbarDropdown = ({
 }) => {
   const [activeItemKeys, setActiveItemKeys] = React.useState<string[]>([])
   const [enabledItemKeys, setEnabledItemKeys] = React.useState<string[]>([])
+  const [enabledGroup, setEnabledGroup] = React.useState<boolean>(true)
   const editorConfigContext = useEditorConfigContext()
+  const { items, key: groupKey } = group
 
   const updateStates = useCallback(() => {
     editor.getEditorState().read(() => {
       const selection = $getSelection()
+      if (!selection) {
+        return
+      }
 
       const _activeItemKeys: string[] = []
       const _activeItems: ToolbarGroupItem[] = []
@@ -122,6 +125,9 @@ export const ToolbarDropdown = ({
           _enabledItemKeys.push(item.key)
         }
       }
+      if (group.isEnabled) {
+        setEnabledGroup(group.isEnabled({ editor, editorConfigContext, selection }))
+      }
       setActiveItemKeys(_activeItemKeys)
       setEnabledItemKeys(_enabledItemKeys)
 
@@ -129,17 +135,10 @@ export const ToolbarDropdown = ({
         onActiveChange({ activeItems: _activeItems })
       }
     })
-  }, [editor, editorConfigContext, items, maxActiveItems, onActiveChange])
+  }, [editor, editorConfigContext, group, items, maxActiveItems, onActiveChange])
 
   useEffect(() => {
     updateStates()
-  }, [updateStates])
-
-  useEffect(() => {
-    document.addEventListener('mouseup', updateStates)
-    return () => {
-      document.removeEventListener('mouseup', updateStates)
-    }
   }, [updateStates])
 
   useEffect(() => {
@@ -152,11 +151,12 @@ export const ToolbarDropdown = ({
 
   return (
     <DropDown
-      Icon={Icon}
       buttonAriaLabel={`${groupKey} dropdown`}
       buttonClassName={[baseClass, `${baseClass}-${groupKey}`, ...(classNames || [])]
         .filter(Boolean)
         .join(' ')}
+      disabled={!enabledGroup}
+      Icon={Icon}
       itemsContainerClassNames={[`${baseClass}-items`, ...(itemsContainerClassNames || [])]}
       key={groupKey}
       label={label}

@@ -1,13 +1,13 @@
 import type { groupNavItems } from '@payloadcms/ui/shared'
-import type { Permissions, ServerProps, VisibleEntities } from 'payload'
+import type { ClientUser, Permissions, ServerProps, VisibleEntities } from 'payload'
 
 import { getTranslation } from '@payloadcms/translations'
-import { Button, Card, Gutter, SetStepNav, SetViewActions } from '@payloadcms/ui'
+import { Button, Card, Gutter, Locked, SetStepNav, SetViewActions } from '@payloadcms/ui'
 import {
   EntityType,
-  RenderComponent,
   formatAdminURL,
   getCreateMappedComponent,
+  RenderComponent,
 } from '@payloadcms/ui/shared'
 import React, { Fragment } from 'react'
 
@@ -16,6 +16,7 @@ import './index.scss'
 const baseClass = 'dashboard'
 
 export type DashboardProps = {
+  globalData: Array<{ data: { _isLocked: boolean; _userEditing: ClientUser | null }; slug: string }>
   Link: React.ComponentType<any>
   navGroups?: ReturnType<typeof groupNavItems>
   permissions: Permissions
@@ -24,9 +25,10 @@ export type DashboardProps = {
 
 export const DefaultDashboard: React.FC<DashboardProps> = (props) => {
   const {
-    Link,
+    globalData,
     i18n,
     i18n: { t },
+    Link,
     locale,
     navGroups,
     params,
@@ -93,6 +95,8 @@ export const DefaultDashboard: React.FC<DashboardProps> = (props) => {
                       let createHREF: string
                       let href: string
                       let hasCreatePermission: boolean
+                      let lockStatus = null
+                      let userEditing = null
 
                       if (type === EntityType.collection) {
                         title = getTranslation(entity.labels.plural, i18n)
@@ -121,16 +125,25 @@ export const DefaultDashboard: React.FC<DashboardProps> = (props) => {
                           adminRoute,
                           path: `/globals/${entity.slug}`,
                         })
+
+                        // Find the lock status for the global
+                        const globalLockData = globalData.find(
+                          (global) => global.slug === entity.slug,
+                        )
+                        if (globalLockData) {
+                          lockStatus = globalLockData.data._isLocked
+                          userEditing = globalLockData.data._userEditing
+                        }
                       }
 
                       return (
                         <li key={entityIndex}>
                           <Card
-                            Link={Link}
                             actions={
-                              hasCreatePermission && type === EntityType.collection ? (
+                              lockStatus && user?.id !== userEditing?.id ? (
+                                <Locked className={`${baseClass}__locked`} user={userEditing} />
+                              ) : hasCreatePermission && type === EntityType.collection ? (
                                 <Button
-                                  Link={Link}
                                   aria-label={t('general:createNewLabel', {
                                     label: getTranslation(entity.labels.singular, i18n),
                                   })}
@@ -138,6 +151,7 @@ export const DefaultDashboard: React.FC<DashboardProps> = (props) => {
                                   el="link"
                                   icon="plus"
                                   iconStyle="with-border"
+                                  Link={Link}
                                   round
                                   to={createHREF}
                                 />
@@ -146,6 +160,7 @@ export const DefaultDashboard: React.FC<DashboardProps> = (props) => {
                             buttonAriaLabel={buttonAriaLabel}
                             href={href}
                             id={`card-${entity.slug}`}
+                            Link={Link}
                             title={title}
                             titleAs="h3"
                           />

@@ -31,6 +31,7 @@ import {
   customAdminRoutes,
   customNestedViewPath,
   customParamViewPath,
+  customRootViewMetaTitle,
   customViewPath,
 } from './shared.js'
 export default buildConfigWithDefaults({
@@ -40,9 +41,13 @@ export default buildConfigWithDefaults({
     },
     components: {
       actions: ['/components/AdminButton/index.js#AdminButton'],
-      afterDashboard: ['/components/AfterDashboard/index.js#AfterDashboard'],
+      afterDashboard: [
+        '/components/AfterDashboard/index.js#AfterDashboard',
+        '/components/AfterDashboardClient/index.js#AfterDashboardClient',
+      ],
       afterNavLinks: ['/components/AfterNavLinks/index.js#AfterNavLinks'],
       beforeLogin: ['/components/BeforeLogin/index.js#BeforeLogin'],
+      header: ['/components/CustomHeader/index.js#CustomHeader'],
       logout: {
         Button: '/components/Logout/index.js#Logout',
       },
@@ -60,6 +65,9 @@ export default buildConfigWithDefaults({
         CustomMinimalView: {
           Component: '/components/views/CustomMinimal/index.js#CustomMinimalView',
           path: '/custom-minimal-view',
+          meta: {
+            title: customRootViewMetaTitle,
+          },
         },
         CustomNestedView: {
           Component: '/components/views/CustomViewNested/index.js#CustomNestedView',
@@ -97,9 +105,18 @@ export default buildConfigWithDefaults({
         description: 'This is a custom OG description',
         title: 'This is a custom OG title',
       },
-      titleSuffix: '- Custom CMS',
+      titleSuffix: '- Custom Title Suffix',
     },
     routes: customAdminRoutes,
+    dependencies: {
+      myTestComponent: {
+        path: '/components/TestComponent.js#TestComponent',
+        type: 'component',
+        clientProps: {
+          test: 'hello',
+        },
+      },
+    },
   },
   collections: [
     UploadCollection,

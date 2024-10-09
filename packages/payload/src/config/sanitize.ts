@@ -15,9 +15,9 @@ import { sanitizeCollection } from '../collections/config/sanitize.js'
 import { migrationsCollection } from '../database/migrations/migrationsCollection.js'
 import { InvalidConfiguration } from '../errors/index.js'
 import { sanitizeGlobals } from '../globals/config/sanitize.js'
+import { getLockedDocumentsCollection } from '../lockedDocuments/lockedDocumentsCollection.js'
 import getPreferencesCollection from '../preferences/preferencesCollection.js'
 import checkDuplicateCollections from '../utilities/checkDuplicateCollections.js'
-import { deepMergeWithReactComponents } from '../utilities/deepMerge.js'
 import { defaults } from './defaults.js'
 
 const sanitizeAdminConfig = (configToSanitize: Config): Partial<SanitizedConfig> => {
@@ -147,6 +147,7 @@ export const sanitizeConfig = async (incomingConfig: Config): Promise<SanitizedC
 
   config.i18n = i18nConfig
 
+  configWithDefaults.collections.push(getLockedDocumentsCollection(config as unknown as Config))
   configWithDefaults.collections.push(getPreferencesCollection(config as unknown as Config))
   configWithDefaults.collections.push(migrationsCollection)
 
@@ -173,13 +174,17 @@ export const sanitizeConfig = async (incomingConfig: Config): Promise<SanitizedC
   }
 
   // Get deduped list of upload adapters
-  if (!config.upload) config.upload = { adapters: [] }
+  if (!config.upload) {
+    config.upload = { adapters: [] }
+  }
   config.upload.adapters = Array.from(
     new Set(config.collections.map((c) => c.upload?.adapter).filter(Boolean)),
   )
 
   // Pass through the email config as is so adapters don't break
-  if (incomingConfig.email) config.email = incomingConfig.email
+  if (incomingConfig.email) {
+    config.email = incomingConfig.email
+  }
 
   /*
     Execute richText sanitization
@@ -188,6 +193,7 @@ export const sanitizeConfig = async (incomingConfig: Config): Promise<SanitizedC
     config.editor = await incomingConfig.editor({
       config: config as SanitizedConfig,
       isRoot: true,
+      parentIsLocalized: false,
     })
     if (config.editor.i18n && Object.keys(config.editor.i18n).length >= 0) {
       config.i18n.translations = deepMergeSimple(config.i18n.translations, config.editor.i18n)

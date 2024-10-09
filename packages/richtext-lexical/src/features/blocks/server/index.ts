@@ -1,4 +1,4 @@
-import type { Block, BlockField, Config, Field } from 'payload'
+import type { Block, BlocksField, Config, Field } from 'payload'
 
 import { fieldsToJSONSchema, sanitizeFields } from 'payload'
 
@@ -22,7 +22,7 @@ export const BlocksFeature = createServerFeature<
   BlocksFeatureProps,
   BlocksFeatureClientProps
 >({
-  feature: async ({ config: _config, isRoot, props }) => {
+  feature: async ({ config: _config, isRoot, parentIsLocalized, props }) => {
     // Build clientProps
     const clientProps: BlocksFeatureClientProps = {
       clientBlockSlugs: [],
@@ -44,12 +44,13 @@ export const BlocksFeature = createServerFeature<
           blocks: props.inlineBlocks ?? [],
         },
       ],
+      parentIsLocalized,
       requireFieldLevelRichTextEditor: isRoot,
       validRelationships,
     })
 
-    props.blocks = (sanitized[0] as BlockField).blocks
-    props.inlineBlocks = (sanitized[1] as BlockField).blocks
+    props.blocks = (sanitized[0] as BlocksField).blocks
+    props.inlineBlocks = (sanitized[1] as BlocksField).blocks
 
     clientProps.clientBlockSlugs = props.blocks.map((block) => block.slug)
     clientProps.clientInlineBlockSlugs = props.inlineBlocks.map((block) => block.slug)
@@ -57,6 +58,44 @@ export const BlocksFeature = createServerFeature<
     return {
       ClientFeature: '@payloadcms/richtext-lexical/client#BlocksFeatureClient',
       clientFeatureProps: clientProps,
+      generatedTypes: {
+        modifyOutputSchema: ({
+          collectionIDFieldTypes,
+          config,
+          currentSchema,
+          field,
+          interfaceNameDefinitions,
+        }) => {
+          if (!props?.blocks?.length && !props?.inlineBlocks?.length) {
+            return currentSchema
+          }
+
+          const fields: BlocksField[] = []
+
+          if (props?.blocks?.length) {
+            fields.push({
+              name: field?.name + '_lexical_blocks',
+              type: 'blocks',
+              blocks: props.blocks,
+            })
+          }
+          if (props?.inlineBlocks?.length) {
+            fields.push({
+              name: field?.name + '_lexical_inline_blocks',
+              type: 'blocks',
+              blocks: props.inlineBlocks,
+            })
+          }
+
+          if (fields.length) {
+            // This is only done so that interfaceNameDefinitions sets those block's interfaceNames.
+            // we don't actually use the JSON Schema itself in the generated types yet.
+            fieldsToJSONSchema(collectionIDFieldTypes, fields, interfaceNameDefinitions, config)
+          }
+
+          return currentSchema
+        },
+      },
       generateSchemaMap: ({ props }) => {
         /**
          * Add sub-fields to the schemaMap. E.g. if you have an array field as part of the block, and it runs addRow, it will request these
@@ -87,47 +126,10 @@ export const BlocksFeature = createServerFeature<
 
         return schemaMap
       },
-      generatedTypes: {
-        modifyOutputSchema: ({
-          collectionIDFieldTypes,
-          config,
-          currentSchema,
-          field,
-          interfaceNameDefinitions,
-        }) => {
-          if (!props?.blocks?.length && !props?.inlineBlocks?.length) {
-            return currentSchema
-          }
-
-          const fields: BlockField[] = []
-
-          if (props?.blocks?.length) {
-            fields.push({
-              name: field?.name + '_lexical_blocks',
-              type: 'blocks',
-              blocks: props.blocks,
-            })
-          }
-          if (props?.inlineBlocks?.length) {
-            fields.push({
-              name: field?.name + '_lexical_inline_blocks',
-              type: 'blocks',
-              blocks: props.inlineBlocks,
-            })
-          }
-
-          if (fields.length) {
-            // This is only done so that interfaceNameDefinitions sets those block's interfaceNames.
-            // we don't actually use the JSON Schema itself in the generated types yet.
-            fieldsToJSONSchema(collectionIDFieldTypes, fields, interfaceNameDefinitions, config)
-          }
-
-          return currentSchema
-        },
-      },
       i18n,
       nodes: [
         createNode({
+          // @ts-expect-error - TODO: fix this
           getSubFields: ({ node }) => {
             if (!node) {
               if (props?.blocks?.length) {
@@ -144,7 +146,7 @@ export const BlocksFeature = createServerFeature<
 
             const blockType = node.fields.blockType
 
-            const block = props.blocks.find((block) => block.slug === blockType)
+            const block = props.blocks?.find((block) => block.slug === blockType)
             return block?.fields
           },
           getSubFieldsData: ({ node }) => {
@@ -155,6 +157,7 @@ export const BlocksFeature = createServerFeature<
           validations: [blockValidationHOC(props.blocks)],
         }),
         createNode({
+          // @ts-expect-error - TODO: fix this
           getSubFields: ({ node }) => {
             if (!node) {
               if (props?.inlineBlocks?.length) {
@@ -171,7 +174,7 @@ export const BlocksFeature = createServerFeature<
 
             const blockType = node.fields.blockType
 
-            const block = props.inlineBlocks.find((block) => block.slug === blockType)
+            const block = props.inlineBlocks?.find((block) => block.slug === blockType)
             return block?.fields
           },
           getSubFieldsData: ({ node }) => {

@@ -40,10 +40,13 @@ function ButtonGroupItem({
       )
     )
   }
+  if (!item.ChildComponent) {
+    return null
+  }
 
   return (
     <ToolbarButton editor={editor} item={item} key={item.key}>
-      {item?.ChildComponent && <item.ChildComponent />}
+      <item.ChildComponent />
     </ToolbarButton>
   )
 }
@@ -61,28 +64,31 @@ function ToolbarGroupComponent({
 }): React.ReactNode {
   const { editorConfig } = useEditorConfigContext()
 
-  const [DropdownIcon, setDropdownIcon] = React.useState<React.FC | null>(null)
+  const [DropdownIcon, setDropdownIcon] = React.useState<React.FC | undefined>()
 
   React.useEffect(() => {
     if (group?.type === 'dropdown' && group.items.length && group.ChildComponent) {
       setDropdownIcon(() => group.ChildComponent)
     } else {
-      setDropdownIcon(null)
+      setDropdownIcon(undefined)
     }
   }, [group])
 
-  const onActiveChange = ({ activeItems }: { activeItems: ToolbarGroupItem[] }) => {
-    if (!activeItems.length) {
-      if (group?.type === 'dropdown' && group.items.length && group.ChildComponent) {
-        setDropdownIcon(() => group.ChildComponent)
-      } else {
-        setDropdownIcon(null)
+  const onActiveChange = useCallback(
+    ({ activeItems }: { activeItems: ToolbarGroupItem[] }) => {
+      if (!activeItems.length) {
+        if (group?.type === 'dropdown' && group.items.length && group.ChildComponent) {
+          setDropdownIcon(() => group.ChildComponent)
+        } else {
+          setDropdownIcon(undefined)
+        }
+        return
       }
-      return
-    }
-    const item = activeItems[0]
-    setDropdownIcon(() => item.ChildComponent)
-  }
+      const item = activeItems[0]
+      setDropdownIcon(() => item.ChildComponent)
+    },
+    [group],
+  )
 
   return (
     <div
@@ -93,11 +99,10 @@ function ToolbarGroupComponent({
         group.items.length &&
         (DropdownIcon ? (
           <ToolbarDropdown
-            Icon={DropdownIcon}
             anchorElem={anchorElem}
             editor={editor}
-            groupKey={group.key}
-            items={group.items}
+            group={group}
+            Icon={DropdownIcon}
             maxActiveItems={1}
             onActiveChange={onActiveChange}
           />
@@ -105,8 +110,7 @@ function ToolbarGroupComponent({
           <ToolbarDropdown
             anchorElem={anchorElem}
             editor={editor}
-            groupKey={group.key}
-            items={group.items}
+            group={group}
             maxActiveItems={1}
             onActiveChange={onActiveChange}
           />
@@ -236,7 +240,7 @@ function InlineToolbar({
           horizontalPosition: 'center',
           specialHandlingForCaret: true,
           targetRect: rangeRect,
-          verticalGap: 10,
+          verticalGap: 8,
         })
       }
     } else {
@@ -314,7 +318,7 @@ function InlineToolbar({
 function useInlineToolbar(
   editor: LexicalEditor,
   anchorElem: HTMLElement,
-): React.ReactElement | null {
+): null | React.ReactElement {
   const [isText, setIsText] = useState(false)
 
   const updatePopup = useCallback(() => {

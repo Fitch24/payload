@@ -1,6 +1,6 @@
 import type { CollectionBeforeChangeHook } from 'payload'
 
-import type { Email, FormBuilderPluginConfig, FormattedEmail } from '../../../types.js'
+import type { Email, FormattedEmail, FormBuilderPluginConfig } from '../../../types.js'
 
 import { serializeLexical } from '../../../utilities/lexical/serializeLexical.js'
 import { replaceDoubleCurlys } from '../../../utilities/replaceDoubleCurlys.js'
@@ -22,7 +22,7 @@ export const sendEmail = async (
 
     const { form: formID, submissionData } = data || {}
 
-    const { beforeEmail, formOverrides } = formConfig || {}
+    const { beforeEmail, defaultToEmail, formOverrides } = formConfig || {}
 
     try {
       const form = await payload.findByID({
@@ -41,11 +41,13 @@ export const sendEmail = async (
               bcc: emailBCC,
               cc: emailCC,
               emailFrom,
-              emailTo,
+              emailTo: emailToFromConfig,
               message,
               replyTo: emailReplyTo,
               subject,
             } = email
+
+            const emailTo = emailToFromConfig || defaultToEmail || payload.email.defaultFromAddress
 
             const to = replaceDoubleCurlys(emailTo, submissionData)
             const cc = emailCC ? replaceDoubleCurlys(emailCC, submissionData) : ''

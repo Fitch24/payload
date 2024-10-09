@@ -1,11 +1,12 @@
 'use client'
 
 import type { FieldType, Options } from '@payloadcms/ui'
-import type { TextFieldProps } from 'payload'
+import type { TextFieldClientProps } from 'payload'
 
 import {
   FieldLabel,
   TextInput,
+  useConfig,
   useDocumentInfo,
   useField,
   useFieldProps,
@@ -25,8 +26,8 @@ import '../index.scss'
 const { maxLength, minLength } = defaults.title
 
 type MetaTitleProps = {
-  hasGenerateTitleFn: boolean
-} & TextFieldProps
+  readonly hasGenerateTitleFn: boolean
+} & TextFieldClientProps
 
 export const MetaTitleComponent: React.FC<MetaTitleProps> = (props) => {
   const {
@@ -37,12 +38,19 @@ export const MetaTitleComponent: React.FC<MetaTitleProps> = (props) => {
       label,
       required,
     },
+    field: fieldFromProps,
     hasGenerateTitleFn,
     labelProps,
   } = props || {}
   const { path: pathFromContext } = useFieldProps()
-
   const { t } = useTranslation<PluginSEOTranslations, PluginSEOTranslationKeys>()
+
+  const {
+    config: {
+      routes: { api },
+      serverURL,
+    },
+  } = useConfig()
 
   const field: FieldType<string> = useField({
     path: pathFromContext,
@@ -55,14 +63,26 @@ export const MetaTitleComponent: React.FC<MetaTitleProps> = (props) => {
   const { errorMessage, setValue, showError, value } = field
 
   const regenerateTitle = useCallback(async () => {
-    if (!hasGenerateTitleFn) return
+    if (!hasGenerateTitleFn) {
+      return
+    }
 
-    const genTitleResponse = await fetch('/api/plugin-seo/generate-title', {
+    const endpoint = `${serverURL}${api}/plugin-seo/generate-title`
+
+    const genTitleResponse = await fetch(endpoint, {
       body: JSON.stringify({
-        ...docInfo,
-        doc: { ...getData() },
+        id: docInfo.id,
+        collectionSlug: docInfo.collectionSlug,
+        doc: getData(),
+        docPermissions: docInfo.docPermissions,
+        globalSlug: docInfo.globalSlug,
+        hasPublishPermission: docInfo.hasPublishPermission,
+        hasSavePermission: docInfo.hasSavePermission,
+        initialData: docInfo.initialData,
+        initialState: docInfo.initialState,
         locale: typeof locale === 'object' ? locale?.code : locale,
-      } satisfies Omit<Parameters<GenerateTitle>[0], 'req'>),
+        title: docInfo.title,
+      } satisfies Omit<Parameters<GenerateTitle>[0], 'collectionConfig' | 'globalConfig' | 'req'>),
       credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
@@ -73,7 +93,23 @@ export const MetaTitleComponent: React.FC<MetaTitleProps> = (props) => {
     const { result: generatedTitle } = await genTitleResponse.json()
 
     setValue(generatedTitle || '')
-  }, [hasGenerateTitleFn, docInfo, getData, locale, setValue])
+  }, [
+    hasGenerateTitleFn,
+    serverURL,
+    api,
+    docInfo.id,
+    docInfo.collectionSlug,
+    docInfo.docPermissions,
+    docInfo.globalSlug,
+    docInfo.hasPublishPermission,
+    docInfo.hasSavePermission,
+    docInfo.initialData,
+    docInfo.initialState,
+    docInfo.title,
+    getData,
+    locale,
+    setValue,
+  ])
 
   return (
     <div
@@ -88,7 +124,13 @@ export const MetaTitleComponent: React.FC<MetaTitleProps> = (props) => {
         }}
       >
         <div className="plugin-seo__field">
-          <FieldLabel Label={Label} label={label} {...(labelProps || {})} />
+          <FieldLabel
+            field={fieldFromProps}
+            Label={Label}
+            label={label}
+            required={required}
+            {...(labelProps || {})}
+          />
           {hasGenerateTitleFn && (
             <React.Fragment>
               &nbsp; &mdash; &nbsp;
@@ -140,7 +182,6 @@ export const MetaTitleComponent: React.FC<MetaTitleProps> = (props) => {
             Component: null,
             RenderedComponent: errorMessage,
           }}
-          label={label}
           onChange={setValue}
           path={pathFromContext}
           required={required}

@@ -1,12 +1,13 @@
 import type { PaginateOptions, Schema } from 'mongoose'
 import type { SanitizedCollectionConfig, SanitizedConfig } from 'payload'
 
+import mongooseAggregatePaginate from 'mongoose-aggregate-paginate-v2'
 import paginate from 'mongoose-paginate-v2'
 
-import getBuildQueryPlugin from '../queries/buildQuery.js'
-import buildSchema from './buildSchema.js'
+import { getBuildQueryPlugin } from '../queries/buildQuery.js'
+import { buildSchema } from './buildSchema.js'
 
-const buildCollectionSchema = (
+export const buildCollectionSchema = (
   collection: SanitizedCollectionConfig,
   config: SanitizedConfig,
   schemaOptions = {},
@@ -42,7 +43,9 @@ const buildCollectionSchema = (
     .plugin<any, PaginateOptions>(paginate, { useEstimatedCount: true })
     .plugin(getBuildQueryPlugin({ collectionSlug: collection.slug }))
 
+  if (Object.keys(collection.joins).length > 0) {
+    schema.plugin(mongooseAggregatePaginate)
+  }
+
   return schema
 }
-
-export default buildCollectionSchema

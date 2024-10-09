@@ -39,14 +39,20 @@ type Props = {
 
 const Component: React.FC<Props> = (props) => {
   const {
-    data: { relationTo, value: id },
+    data: { relationTo, value },
     nodeKey,
   } = props
+
+  if (typeof value === 'object') {
+    throw new Error(
+      'Relationship value should be a string or number. The Lexical Relationship component should not receive the populated value object.',
+    )
+  }
 
   const relationshipElemRef = useRef<HTMLDivElement | null>(null)
 
   const [editor] = useLexicalComposerContext()
-  const [isSelected, setSelected, clearSelection] = useLexicalNodeSelection(nodeKey)
+  const [isSelected, setSelected, clearSelection] = useLexicalNodeSelection(nodeKey!)
   const { field } = useEditorConfigContext()
   const {
     config: {
@@ -56,25 +62,25 @@ const Component: React.FC<Props> = (props) => {
     },
   } = useConfig()
 
-  const [relatedCollection, setRelatedCollection] = useState(() =>
-    collections.find((coll) => coll.slug === relationTo),
+  const [relatedCollection, setRelatedCollection] = useState(
+    () => collections.find((coll) => coll.slug === relationTo)!,
   )
 
   const { i18n, t } = useTranslation()
   const [cacheBust, dispatchCacheBust] = useReducer((state) => state + 1, 0)
   const [{ data }, { setParams }] = usePayloadAPI(
-    `${serverURL}${api}/${relatedCollection.slug}/${id}`,
+    `${serverURL}${api}/${relatedCollection.slug}/${value}`,
     { initialParams },
   )
 
   const [DocumentDrawer, DocumentDrawerToggler, { closeDrawer }] = useDocumentDrawer({
-    id,
+    id: value,
     collectionSlug: relatedCollection.slug,
   })
 
   const removeRelationship = useCallback(() => {
     editor.update(() => {
-      $getNodeByKey(nodeKey).remove()
+      $getNodeByKey(nodeKey!)?.remove()
     })
   }, [editor, nodeKey])
 
@@ -93,18 +99,21 @@ const Component: React.FC<Props> = (props) => {
 
   const $onDelete = useCallback(
     (payload: KeyboardEvent) => {
-      if (isSelected && $isNodeSelection($getSelection())) {
+      const deleteSelection = $getSelection()
+      if (isSelected && $isNodeSelection(deleteSelection)) {
         const event: KeyboardEvent = payload
         event.preventDefault()
-        const node = $getNodeByKey(nodeKey)
-        if ($isRelationshipNode(node)) {
-          node.remove()
-          return true
-        }
+        editor.update(() => {
+          deleteSelection.getNodes().forEach((node) => {
+            if ($isRelationshipNode(node)) {
+              node.remove()
+            }
+          })
+        })
       }
       return false
     },
-    [isSelected, nodeKey],
+    [editor, isSelected],
   )
   const onClick = useCallback(
     (payload: MouseEvent) => {
@@ -153,7 +162,7 @@ const Component: React.FC<Props> = (props) => {
         </p>
         <DocumentDrawerToggler className={`${baseClass}__doc-drawer-toggler`}>
           <p className={`${baseClass}__title`}>
-            {data ? data[relatedCollection?.admin?.useAsTitle || 'id'] : id}
+            {data ? data[relatedCollection?.admin?.useAsTitle || 'id'] : value}
           </p>
         </DocumentDrawerToggler>
       </div>
@@ -166,9 +175,11 @@ const Component: React.FC<Props> = (props) => {
             el="div"
             icon="swap"
             onClick={() => {
-              editor.dispatchCommand(INSERT_RELATIONSHIP_WITH_DRAWER_COMMAND, {
-                replace: { nodeKey },
-              })
+              if (nodeKey) {
+                editor.dispatchCommand(INSERT_RELATIONSHIP_WITH_DRAWER_COMMAND, {
+                  replace: { nodeKey },
+                })
+              }
             }}
             round
             tooltip={t('fields:swapRelationship')}
@@ -188,7 +199,7 @@ const Component: React.FC<Props> = (props) => {
         </div>
       )}
 
-      {id && <DocumentDrawer onSave={updateRelationship} />}
+      {!!value && <DocumentDrawer onSave={updateRelationship} />}
     </div>
   )
 }

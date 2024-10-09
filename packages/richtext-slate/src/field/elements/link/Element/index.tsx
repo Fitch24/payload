@@ -46,7 +46,9 @@ const insertChange = (editor, fields) => {
     url: data.url,
   }
 
-  if (data.fields) newNode.fields = data.fields
+  if (data.fields) {
+    newNode.fields = data.fields
+  }
 
   Transforms.setNodes(editor, newNode, { at: parentPath })
 
@@ -98,7 +100,7 @@ export const LinkElement = () => {
         url: element.url,
       }
 
-      const state = await getFormState({
+      const { state } = await getFormState({
         apiRoute: config.routes.api,
         body: {
           data,
@@ -214,7 +216,9 @@ export const LinkElement = () => {
         className={[`${baseClass}__popup-toggler`].filter(Boolean).join(' ')}
         onClick={() => setRenderPopup(true)}
         onKeyDown={(e) => {
-          if (e.key === 'Enter') setRenderPopup(true)
+          if (e.key === 'Enter') {
+            setRenderPopup(true)
+          }
         }}
         role="button"
         tabIndex={0}

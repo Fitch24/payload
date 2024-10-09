@@ -1,11 +1,19 @@
 'use client'
-import type { LexicalNode } from 'lexical'
+import type { ElementNode, LexicalNode } from 'lexical'
 import type { Data, FormState } from 'payload'
 
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext.js'
 import { $findMatchingParent, mergeRegister } from '@lexical/utils'
 import { getTranslation } from '@payloadcms/translations'
-import { formatDrawerSlug, useConfig, useEditDepth, useModal, useTranslation } from '@payloadcms/ui'
+import {
+  CloseMenuIcon,
+  EditIcon,
+  formatDrawerSlug,
+  useConfig,
+  useEditDepth,
+  useModal,
+  useTranslation,
+} from '@payloadcms/ui'
 import {
   $getSelection,
   $isLineBreakNode,
@@ -33,8 +41,8 @@ export function LinkEditor({ anchorElem }: { anchorElem: HTMLElement }): React.R
   const [editor] = useLexicalComposerContext()
 
   const editorRef = useRef<HTMLDivElement | null>(null)
-  const [linkUrl, setLinkUrl] = useState(null)
-  const [linkLabel, setLinkLabel] = useState(null)
+  const [linkUrl, setLinkUrl] = useState<null | string>(null)
+  const [linkLabel, setLinkLabel] = useState<null | string>(null)
 
   const { uuid } = useEditorConfigContext()
 
@@ -42,7 +50,9 @@ export function LinkEditor({ anchorElem }: { anchorElem: HTMLElement }): React.R
 
   const { i18n, t } = useTranslation()
 
-  const [stateData, setStateData] = useState<{ id?: string; text: string } & LinkFields>(null)
+  const [stateData, setStateData] = useState<
+    ({ id?: string; text: string } & LinkFields) | undefined
+  >()
 
   const { closeModal, toggleModal } = useModal()
   const editDepth = useEditDepth()
@@ -66,12 +76,12 @@ export function LinkEditor({ anchorElem }: { anchorElem: HTMLElement }): React.R
     setLinkUrl(null)
     setLinkLabel(null)
     setSelectedNodes([])
-    setStateData(null)
+    setStateData(undefined)
   }, [setIsLink, setLinkUrl, setLinkLabel, setSelectedNodes])
 
   const $updateLinkEditor = useCallback(() => {
     const selection = $getSelection()
-    let selectedNodeDomRect: DOMRect | undefined = null
+    let selectedNodeDomRect: DOMRect | undefined
 
     if (!$isRangeSelection(selection) || !selection) {
       setNotLink()
@@ -82,7 +92,7 @@ export function LinkEditor({ anchorElem }: { anchorElem: HTMLElement }): React.R
 
     const focusNode = getSelectedNode(selection)
     selectedNodeDomRect = editor.getElementByKey(focusNode.getKey())?.getBoundingClientRect()
-    const focusLinkParent: LinkNode = $findMatchingParent(focusNode, $isLinkNode)
+    const focusLinkParent = $findMatchingParent(focusNode, $isLinkNode)
 
     // Prevent link modal from showing if selection spans further than the link: https://github.com/facebook/lexical/issues/4064
     const badNode = selection
@@ -103,10 +113,6 @@ export function LinkEditor({ anchorElem }: { anchorElem: HTMLElement }): React.R
 
     // Initial state:
     const data: { text: string } & LinkFields = {
-      doc: undefined,
-      linkType: undefined,
-      newTab: undefined,
-      url: '',
       ...focusLinkParent.getFields(),
       id: focusLinkParent.getID(),
       text: focusLinkParent.getTextContent(),
@@ -118,7 +124,7 @@ export function LinkEditor({ anchorElem }: { anchorElem: HTMLElement }): React.R
     } else {
       // internal link
       setLinkUrl(
-        `/admin/collections/${focusLinkParent.getFields()?.doc?.relationTo}/${
+        `${config.routes.admin === '/' ? '' : config.routes.admin}/collections/${focusLinkParent.getFields()?.doc?.relationTo}/${
           focusLinkParent.getFields()?.doc?.value
         }`,
       )
@@ -293,7 +299,9 @@ export function LinkEditor({ anchorElem }: { anchorElem: HTMLElement }): React.R
                 }}
                 tabIndex={0}
                 type="button"
-              />
+              >
+                <EditIcon />
+              </button>
               {!isAutoLink && (
                 <button
                   aria-label="Remove link"
@@ -306,7 +314,9 @@ export function LinkEditor({ anchorElem }: { anchorElem: HTMLElement }): React.R
                   }}
                   tabIndex={0}
                   type="button"
-                />
+                >
+                  <CloseMenuIcon />
+                </button>
               )}
             </React.Fragment>
           )}
@@ -331,7 +341,7 @@ export function LinkEditor({ anchorElem }: { anchorElem: HTMLElement }): React.R
           // See: https://github.com/facebook/lexical/pull/5536. This updates autolink nodes to link nodes whenever a change was made (which is good!).
           editor.update(() => {
             const selection = $getSelection()
-            let linkParent = null
+            let linkParent: ElementNode | null = null
             if ($isRangeSelection(selection)) {
               linkParent = getSelectedNode(selection).getParent()
             } else {

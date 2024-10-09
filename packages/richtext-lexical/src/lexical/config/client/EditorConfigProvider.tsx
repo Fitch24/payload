@@ -1,7 +1,6 @@
 'use client'
 
 import type { LexicalEditor } from 'lexical'
-import type { RichTextFieldClient } from 'payload'
 
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext.js'
 import * as React from 'react'
@@ -23,15 +22,16 @@ export interface EditorConfigContextType {
   editorConfig: SanitizedClientEditorConfig
   editorContainerRef: React.RefObject<HTMLDivElement>
   field: LexicalRichTextFieldProps['field']
+  focusedEditor: EditorConfigContextType | null
   // Editor focus handling
   focusEditor: (editorContext: EditorConfigContextType) => void
-  focusedEditor: EditorConfigContextType | null
   parentEditor: EditorConfigContextType
   registerChild: (uuid: string, editorContext: EditorConfigContextType) => void
   unregisterChild?: (uuid: string) => void
   uuid: string
 }
 
+// @ts-expect-error: TODO: Fix this
 const Context: React.Context<EditorConfigContextType> = createContext({
   editorConfig: null,
   field: null,
@@ -47,7 +47,7 @@ export const EditorConfigProvider = ({
 }: {
   children: React.ReactNode
   editorConfig: SanitizedClientEditorConfig
-  editorContainerRef: React.RefObject<HTMLDivElement>
+  editorContainerRef: React.RefObject<HTMLDivElement | null>
   field: LexicalRichTextFieldProps['field']
   parentContext?: EditorConfigContextType
 }): React.ReactNode => {
@@ -71,6 +71,7 @@ export const EditorConfigProvider = ({
         editorConfig,
         editorContainerRef,
         field,
+        focusedEditor,
         focusEditor: (editorContext: EditorConfigContextType) => {
           const editorUUID = editorContext.uuid
 
@@ -87,13 +88,12 @@ export const EditorConfigProvider = ({
           if (parentContext?.uuid) {
             parentContext.focusEditor(editorContext)
           }
-          childrenEditors.current.forEach((childEditor, childUUID) => {
+          childrenEditors.current.forEach((childEditor) => {
             childEditor.focusEditor(editorContext)
           })
 
           focusHistory.current.clear()
         },
-        focusedEditor,
         parentEditor: parentContext,
         registerChild: (childUUID, childEditorContext) => {
           if (!childrenEditors.current.has(childUUID)) {

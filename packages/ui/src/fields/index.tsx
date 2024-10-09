@@ -1,3 +1,4 @@
+'use client'
 import type { FieldTypes } from 'payload'
 import type React from 'react'
 
@@ -11,6 +12,7 @@ import { DateTimeField } from './DateTime/index.js'
 import { EmailField } from './Email/index.js'
 import { GroupField } from './Group/index.js'
 import { HiddenField } from './Hidden/index.js'
+import { JoinField } from './Join/index.js'
 import { JSONField } from './JSON/index.js'
 import { NumberField } from './Number/index.js'
 import { PasswordField } from './Password/index.js'
@@ -43,6 +45,7 @@ export const fieldComponents: FieldTypesComponents = {
   email: EmailField,
   group: GroupField,
   hidden: HiddenField,
+  join: JoinField,
   json: JSONField,
   number: NumberField,
   password: PasswordField,

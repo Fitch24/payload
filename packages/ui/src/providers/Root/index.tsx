@@ -30,18 +30,18 @@ import { ToastContainer } from '../ToastContainer/index.js'
 import { TranslationProvider } from '../Translation/index.js'
 
 type Props = {
-  children: React.ReactNode
-  config: ClientConfig
-  dateFNSKey: Language['dateFNSKey']
-  fallbackLang: ClientConfig['i18n']['fallbackLanguage']
-  isNavOpen?: boolean
-  languageCode: string
-  languageOptions: LanguageOptions
-  permissions: Permissions
-  switchLanguageServerAction?: (lang: string) => Promise<void>
-  theme: Theme
-  translations: I18nClient['translations']
-  user: User | null
+  readonly children: React.ReactNode
+  readonly config: ClientConfig
+  readonly dateFNSKey: Language['dateFNSKey']
+  readonly fallbackLang: ClientConfig['i18n']['fallbackLanguage']
+  readonly isNavOpen?: boolean
+  readonly languageCode: string
+  readonly languageOptions: LanguageOptions
+  readonly permissions: Permissions
+  readonly switchLanguageServerAction?: (lang: string) => Promise<void>
+  readonly theme: Theme
+  readonly translations: I18nClient['translations']
+  readonly user: null | User
 }
 
 export const RootProvider: React.FC<Props> = ({
@@ -58,9 +58,12 @@ export const RootProvider: React.FC<Props> = ({
   translations,
   user,
 }) => {
+  const RouteCacheComponent =
+    process.env.NEXT_PUBLIC_ENABLE_ROUTER_CACHE_REFRESH === 'true' ? RouteCache : Fragment
+
   return (
     <Fragment>
-      <RouteCache>
+      <RouteCacheComponent>
         <ConfigProvider config={config}>
           <FieldComponentsProvider fieldComponents={fieldComponents}>
             <ClientFunctionProvider>
@@ -85,7 +88,7 @@ export const RootProvider: React.FC<Props> = ({
                       <ModalProvider classPrefix="payload" transTime={0} zIndex="var(--z-modal)">
                         <AuthProvider permissions={permissions} user={user}>
                           <PreferencesProvider>
-                            <ThemeProvider cookiePrefix={config.cookiePrefix} theme={theme}>
+                            <ThemeProvider theme={theme}>
                               <ParamsProvider>
                                 <LocaleProvider>
                                   <StepNavProvider>
@@ -114,7 +117,7 @@ export const RootProvider: React.FC<Props> = ({
             </ClientFunctionProvider>
           </FieldComponentsProvider>
         </ConfigProvider>
-      </RouteCache>
+      </RouteCacheComponent>
       <ToastContainer />
     </Fragment>
   )
