@@ -1,6 +1,7 @@
 import type { CollectionConfig } from '../../../../packages/payload/src/collections/config/types'
 
 import { mediaSlug } from '../Media'
+import { usersSlug } from '../Users'
 
 export const postsSlug = 'posts'
 
@@ -23,6 +24,12 @@ export const PostsCollection: CollectionConfig = {
       },
       relationTo: mediaSlug,
       type: 'upload',
+    },
+    {
+      name: 'author',
+      type: 'relationship',
+      relationTo: usersSlug,
+      required: true,
     },
   ],
   slug: postsSlug,

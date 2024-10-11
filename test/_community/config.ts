@@ -29,29 +29,5 @@ export default buildConfigWithDefaults({
         password: devUser.password,
       },
     })
-
-    await payload.create({
-      collection: postsSlug,
-      data: {
-        text: 'example post',
-        title: 'title1',
-      },
-    })
-
-    await payload.create({
-      collection: postsSlug,
-      data: {
-        text: 'example post',
-        title: 'title3',
-      },
-    })
-
-    await payload.create({
-      collection: postsSlug,
-      data: {
-        text: 'example post',
-        title: 'title2',
-      },
-    })
   },
 })

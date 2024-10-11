@@ -1,12 +1,16 @@
+import type { User } from './payload-types'
+
 import payload from '../../packages/payload/src'
 import { devUser } from '../credentials'
 import { initPayloadTest } from '../helpers/configHelpers'
 import { postsSlug } from './collections/Posts'
+import { usersSlug } from './collections/Users'
 
 require('isomorphic-fetch')
 
 let apiUrl
 let jwt
+let exampleUser: User
 
 const headers = {
   'Content-Type': 'application/json',
@@ -31,6 +35,16 @@ describe('_Community Tests', () => {
 
     const data = await response.json()
     jwt = data.token
+    exampleUser = (await payload.create({
+      collection: usersSlug,
+      data: {
+        email: 'user@example.com',
+        password: 'pa55w0rD',
+      },
+    })) as unknown as User
+    if (!/[a-f]+/i.test(exampleUser.id)) {
+      throw new Error('id must contain at least one alphabetical symbol')
+    }
   })
 
   afterAll(async () => {
@@ -44,19 +58,74 @@ describe('_Community Tests', () => {
   // use the tests below as a guide
   // --__--__--__--__--__--__--__--__--__
 
-  it('local API example', async () => {
-    const newPost = await payload.create({
-      collection: postsSlug,
-      data: {
-        text: 'LOCAL API EXAMPLE',
-      },
+  it('create example', async () => {
+    const newPosts = await Promise.all([
+      payload.create({
+        collection: postsSlug,
+        data: {
+          text: 'LOWER CASE ID PASSING',
+          author: exampleUser.id,
+        },
+        depth: 10,
+        overrideAccess: true,
+      }),
+      payload.create({
+        collection: postsSlug,
+        data: {
+          text: 'UPPER CASE ID PASSING',
+          author: exampleUser.id.toUpperCase(),
+        },
+        depth: 10,
+        overrideAccess: true,
+      }),
+    ])
+    expect(newPosts).toHaveLength(2)
+    // first post will be populated
+    // but second will be just a string
+    newPosts.forEach((post) => {
+      expect(typeof post.author).toBe('object')
     })
-
-    expect(newPost.text).toEqual('LOCAL API EXAMPLE')
   })
 
-  it('rest API example', async () => {
-    const newPost = await fetch(`${apiUrl}/${postsSlug}`, {
+  it('find example', async () => {
+    const newPosts = await Promise.all([
+      payload.create({
+        collection: postsSlug,
+        data: {
+          text: 'LOWER CASE ID PASSING',
+          author: exampleUser.id,
+        },
+      }),
+      payload.create({
+        collection: postsSlug,
+        data: {
+          text: 'UPPER CASE ID PASSING',
+          author: exampleUser.id.toUpperCase(),
+        },
+      }),
+    ])
+
+    expect(newPosts).toHaveLength(2)
+
+    const posts = await payload.find({
+      collection: postsSlug,
+      where: {
+        id: {
+          in: newPosts.map((x) => x.id),
+        },
+      },
+      depth: 10,
+      overrideAccess: true,
+    })
+
+    expect(posts.totalDocs).toBe(2)
+    posts.docs.forEach((doc) => {
+      expect(typeof doc.author).toBe('object')
+    })
+  })
+
+  it('rest API internal error', async () => {
+    const res = await fetch(`${apiUrl}/${postsSlug}`, {
       method: 'POST',
       headers: {
         ...headers,
@@ -64,9 +133,12 @@ describe('_Community Tests', () => {
       },
       body: JSON.stringify({
         text: 'REST API EXAMPLE',
+        author: 'any value not casted to ObjectId',
       }),
-    }).then((res) => res.json())
+    }).catch((e) => e)
 
-    expect(newPost.doc.text).toEqual('REST API EXAMPLE')
+    // passing wrong id via non localAPI is a client error, not a server
+    expect(res.status).toBeGreaterThanOrEqual(400)
+    expect(res.status).toBeLessThan(500)
   })
 })
