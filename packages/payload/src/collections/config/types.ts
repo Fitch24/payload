@@ -31,7 +31,7 @@ import type {
   StaticLabel,
 } from '../../config/types.js'
 import type { DBIdentifierName } from '../../database/types.js'
-import type { Field, JoinField } from '../../fields/config/types.js'
+import type { Field, JoinField, RelationshipField, UploadField } from '../../fields/config/types.js'
 import type {
   CollectionSlug,
   JsonObject,
@@ -489,6 +489,7 @@ export type SanitizedJoin = {
    * The schemaPath of the join field in dot notation
    */
   schemaPath: string
+  targetField: RelationshipField | UploadField
 }
 
 export type SanitizedJoins = {
