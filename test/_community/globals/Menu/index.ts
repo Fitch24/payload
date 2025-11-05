@@ -8,6 +8,7 @@ export const MenuGlobal: GlobalConfig = {
     {
       name: 'globalText',
       type: 'text',
+      defaultValue: () => 'This field must have default value if no "global" document exists in db',
     },
   ],
 }
